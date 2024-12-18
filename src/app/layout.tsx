@@ -1,8 +1,14 @@
+import './globals.css';
 import { Inter } from 'next/font/google';
 import { Header } from '@/components/Header';
-import './globals.css';
+import { ToastProvider } from '@/contexts/ToastContext';
 
 const inter = Inter({ subsets: ['latin'] });
+
+export const metadata = {
+  title: 'Audit de Site Web',
+  description: 'Outil professionnel d\'audit de site web',
+};
 
 export default function RootLayout({
   children,
@@ -10,12 +16,12 @@ export default function RootLayout({
   children: React.ReactNode;
 }) {
   return (
-    <html lang="fr" className="h-full">
-      <body className={`${inter.className} antialiased h-full bg-gradient-to-b from-gray-900 to-gray-800`}>
-        <Header />
-        <main className="h-full pt-16">
-          {children}
-        </main>
+    <html lang="fr">
+      <body className={inter.className}>
+        <ToastProvider>
+          <Header />
+          <main className="bg-gray-900 min-h-screen">{children}</main>
+        </ToastProvider>
       </body>
     </html>
   );

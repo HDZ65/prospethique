@@ -12,7 +12,7 @@ export const Header = () => {
     { href: '/prospects/add', icon: <PlusCircle className="w-5 h-5" />, label: 'Nouveau Prospect' },
     { href: '/calendar', icon: <Calendar className="w-5 h-5" />, label: 'Calendrier' },
     { href: '/tasks', icon: <Clock className="w-5 h-5" />, label: 'Tâches' },
-    { href: '/interactions', icon: <MessageSquare className="w-5 h-5" />, label: 'Interactions' },
+    { href: '/questionnaire', icon: <MessageSquare className="w-5 h-5" />, label: 'Questionnaire' },
   ];
 
   return (

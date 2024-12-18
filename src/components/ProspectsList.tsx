@@ -2,14 +2,13 @@
 
 import { useState } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { Users, Mail, Calendar, MoreVertical, Search, Pencil, Trash2, X } from 'lucide-react';
-import { Prospect } from '@/schemas';
+import { Users, Mail, Calendar, MoreVertical, Search, Pencil, Trash2} from 'lucide-react';
+import { ProspectWithId } from '@/schemas/prospect-schema';
 import Link from 'next/link';
-import { deleteProspect } from '@/app/actions/prospects-action';
 import { Toast } from '@/components/ui/Toast';
 
 interface ProspectsListProps {
-  prospects: Array<Prospect & { id: string }>;
+  prospects: Array<ProspectWithId>;
 }
 
 export const ProspectsList = ({ prospects }: ProspectsListProps) => {
@@ -20,7 +19,7 @@ export const ProspectsList = ({ prospects }: ProspectsListProps) => {
   const filteredProspects = prospects.filter(prospect => 
     prospect.entreprise.toLowerCase().includes(searchTerm.toLowerCase()) ||
     prospect.contact.toLowerCase().includes(searchTerm.toLowerCase()) ||
-    prospect.email.toLowerCase().includes(searchTerm.toLowerCase())
+    prospect.mails?.some(mail => mail.email.toLowerCase().includes(searchTerm.toLowerCase()))
   );
 
   const formatDate = (dateString: string) => {
@@ -29,17 +28,6 @@ export const ProspectsList = ({ prospects }: ProspectsListProps) => {
       month: 'long',
       day: 'numeric'
     });
-  };
-
-  const handleDelete = async (id: string) => {
-    if (confirm('Êtes-vous sûr de vouloir supprimer ce prospect ?')) {
-      const result = await deleteProspect(id);
-      if (result.success) {
-        setToast({ type: 'success', message: 'Prospect supprimé avec succès' });
-      } else {
-        setToast({ type: 'error', message: result.error || 'Erreur lors de la suppression' });
-      }
-    }
   };
 
   return (

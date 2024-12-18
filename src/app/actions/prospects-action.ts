@@ -1,54 +1,144 @@
 'use server'
 
 import { db } from '@/lib/firebase-admin';
-import { Prospect } from '@/schemas';
+import { schemaProspect, schemaProspectWithId } from '@/schemas/prospect-schema';
 import { Timestamp } from 'firebase-admin/firestore';
 import { revalidatePath } from 'next/cache';
+import { ProspectResponse} from '@/types';
+import { actionClient } from "@/lib/safe-action";
 
-export async function getProspects() {
-  try {
-    const prospectsSnapshot = await db.collection('prospects')
-      .orderBy('dateCreation', 'desc')
-      .get();
-    
-    return prospectsSnapshot.docs.map(doc => {
-      const data = doc.data();
+// GET
+export const getProspects = actionClient
+  .action(async () => {
+    try {
+
+      // Vérification de la connexion à la base de données
+      if (!db) {
+        throw new Error("Erreur de connexion à la base de données");
+      }
+
+      // Récupération des prospects
+      const snapshot = await db.collection('prospects')
+        .orderBy('dateCreation', 'desc')
+        .get();
+
+      // Si aucun prospect n'est trouvé
+      if (snapshot.empty) {
+        return {
+          data: [],
+          metadata: {
+            total: 0,
+            timestamp: new Date().toISOString()
+          }
+        };
+      }
+
+      // Traitement des prospects
+      const prospects = snapshot.docs.map(doc => {
+        const data = doc.data() as ProspectResponse;
+
+        // Validation des données avec le schéma
+        const validatedData = schemaProspect.parse({
+          ...data,
+        });
+
+        return {
+          ...validatedData,
+          dateCreation: data.dateCreation.toDate(),
+          id: doc.id,
+        };
+      });
+
       return {
-        id: doc.id,
-        entreprise: data.entreprise,
-        contact: data.contact,
-        email: data.email,
-        statut: data.statut,
-        notes: data.notes,
-        dateCreation: (data.dateCreation as Timestamp).toDate().toISOString(),
-        dateRelanceOptimale: (data.dateRelanceOptimale as Timestamp).toDate().toISOString()
+        prospects,
+        metadata: {
+          total: prospects.length,
+          timestamp: new Date().toISOString()
+        }
       };
-    });
-    
-  } catch (error) {
-    console.error('Erreur lors de la récupération des prospects:', error);
-    return [];
-  }
-}
 
-export async function updateProspect(id: string, data: Partial<Prospect>) {
-  try {
-    await db.collection('prospects').doc(id).update(data);
-    revalidatePath('/prospects');
-    return { success: true };
-  } catch (error) {
-    console.error('Erreur lors de la mise à jour du prospect:', error);
-    return { success: false, error: 'Erreur lors de la mise à jour' };
-  }
-}
+    } catch (error) {
 
-export async function deleteProspect(id: string) {
-  try {
-    await db.collection('prospects').doc(id).delete();
-    revalidatePath('/prospects');
-    return { success: true };
-  } catch (error) {
-    console.error('Erreur lors de la suppression du prospect:', error);
-    return { success: false, error: 'Erreur lors de la suppression' };
-  }
-} 
+      return {
+        failure: 'Erreur lors de la récupération des prospects',
+        error: error instanceof Error ? error.message : 'Erreur inconnue'
+      };
+    }
+  });
+
+// CREATE
+export const addProspect = actionClient
+  .schema(schemaProspect)
+  .action(async ({ parsedInput: prospectData }) => {
+    try {
+      if (!db?.collection('prospects')) {
+        throw new Error("Erreur d'accès à la collection prospects");
+      }
+
+      // Convertir les données en objet simple
+      const newProspectData = {
+        ...prospectData,
+        dateCreation: Timestamp.fromDate(new Date()),
+        dateRelanceOptimale: Timestamp.fromMillis(Date.now() + 7 * 24 * 60 * 60 * 1000),
+        statut: 'À contacter',
+        // S'assurer que notes n'est pas undefined
+        notes: prospectData.notes || ''
+      };
+
+      // Vérifier que toutes les données sont présentes
+      console.log('Données finales:', JSON.stringify(newProspectData));
+
+      const docRef = await db.collection('prospects').add(newProspectData);
+
+      if (!docRef.id) {
+        throw new Error("Échec de la création du document");
+      }
+
+      revalidatePath('/prospects');
+      
+      return {
+        data: true,
+        message: 'Prospect ajouté avec succès'
+      };
+    } catch (error) {
+      console.error('Erreur complète:', error);
+      return {
+        failure: 'Erreur lors de la création du prospect',
+        error: error instanceof Error ? error.message : 'Erreur inconnue'
+      };
+    }
+  });
+
+// UPDATE
+export const updateProspect = actionClient
+  .schema(schemaProspectWithId)
+  .action(async ({ parsedInput : prospectWithId }) => {
+
+    try {
+      if (!db?.collection('prospects')) {
+        throw new Error("Erreur d'accès à la collection prospects");
+      }
+
+      await db.collection('prospects').doc(prospectWithId.id).update(prospectWithId);
+      revalidatePath('/prospects');
+      return { data: true, message: 'Prospect mis à jour avec succès' };
+    } catch {
+      return { failure: 'Erreur lors de la mise à jour du prospect', error: 'Erreur inconnue' };
+    }
+  });
+
+// DELETE
+export const deleteProspect = actionClient
+  .schema(schemaProspectWithId)
+  .action(async ({ parsedInput: prospectWithId }) => {
+    try {
+      if (!db?.collection('prospects')) {
+        throw new Error("Erreur d'accès à la collection prospects");
+      }
+      await db.collection('prospects').doc(prospectWithId.id).delete();
+      revalidatePath('/prospects');
+      return { data: true, message: 'Prospect supprimé avec succès' };
+    } catch {
+      return { failure: 'Erreur lors de la suppression du prospect', error: 'Erreur inconnue' };
+    }
+  });

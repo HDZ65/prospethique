@@ -1,5 +1,5 @@
 import Papa from 'papaparse';
-import { Prospect } from '@/hooks/useProspects';
+import { Prospect } from '@/hooks/useGetProspects';
 
 export const exporterProspects = (prospects: Prospect[]) => {
   const csvContent = prospects.map(p => ({
