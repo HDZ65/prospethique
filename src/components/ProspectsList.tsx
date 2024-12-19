@@ -7,6 +7,8 @@ import { ProspectWithId } from '@/schemas/prospect-schema';
 import Link from 'next/link';
 import { Toast } from '@/components/ui/Toast';
 import { EmailFormModal } from '@/components/EmailFormModal';
+import { deleteProspect  } from '@/app/actions/prospects-action';
+import { useAction } from 'next-safe-action/hooks';
 
 interface ProspectsListProps {
   prospects: Array<ProspectWithId>;
@@ -17,6 +19,8 @@ export const ProspectsList = ({ prospects }: ProspectsListProps) => {
   const [toast, setToast] = useState<{ type: 'success' | 'error'; message: string } | null>(null);
   const [isEmailModalOpen, setIsEmailModalOpen] = useState(false);
   const [selectedProspect, setSelectedProspect] = useState<ProspectWithId | null>(null);
+
+  const { execute } = useAction(deleteProspect);
 
   const filteredProspects = prospects.filter(prospect =>
     prospect.site.toLowerCase().includes(searchTerm.toLowerCase()) ||
@@ -32,7 +36,9 @@ export const ProspectsList = ({ prospects }: ProspectsListProps) => {
   };
 
   const handleDelete = async (id: string) => {
-    console.log(id);
+    const formData = new FormData();
+    formData.append('id', id);
+    execute(formData);
   };
 
   const handleOpenEmailModal = (prospect: ProspectWithId) => {
@@ -46,7 +52,7 @@ export const ProspectsList = ({ prospects }: ProspectsListProps) => {
         initial={{ opacity: 0, y: 10 }}
         animate={{ opacity: 1, y: 0 }}
         transition={{ duration: 0.2, ease: "easeOut" }}
-        className="bg-gradient-glass backdrop-blur-glass rounded-lg border border-white/10 shadow-glass overflow-hidden"
+        className="bg-gradient-glass backdrop-blur-glass rounded-lg border border-white/10 shadow-glass overflow-hidden w-3/5"
       >
         {/* Header */}
         <div className="p-6 border-b border-white/10">
@@ -163,7 +169,7 @@ export const ProspectsList = ({ prospects }: ProspectsListProps) => {
           setIsEmailModalOpen(false);
           setSelectedProspect(null);
         }}
-        prospect={selectedProspect}
+        prospect={selectedProspect as ProspectWithId}
       />
 
       {/* Toast notifications */}

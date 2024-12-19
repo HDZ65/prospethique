@@ -1,7 +1,7 @@
 'use server'
 
 import { db } from '@/lib/firebase-admin';
-import { schemaProspect, schemaProspectWithId } from '@/schemas/prospect-schema';
+import { schemaProspect, schemaProspectWithId, deleteProspectSchema } from '@/schemas/prospect-schema';
 import { Timestamp } from 'firebase-admin/firestore';
 import { revalidatePath } from 'next/cache';
 import { ProspectResponse} from '@/types';
@@ -126,13 +126,13 @@ export const updateProspect = actionClient
 
 // DELETE
 export const deleteProspect = actionClient
-  .schema(schemaProspectWithId)
-  .action(async ({ parsedInput: prospectWithId }) => {
+  .schema(deleteProspectSchema)
+  .action(async ({ parsedInput: { id } }) => {
     try {
       if (!db?.collection('prospects')) {
         throw new Error("Erreur d'accès à la collection prospects");
       }
-      await db.collection('prospects').doc(prospectWithId.id).delete();
+      await db.collection('prospects').doc(id).delete();
       revalidatePath('/prospects');
       return { data: true, message: 'Prospect supprimé avec succès' };
     } catch {
