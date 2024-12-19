@@ -163,7 +163,7 @@ export const ProspectsList = ({ prospects }: ProspectsListProps) => {
           setIsEmailModalOpen(false);
           setSelectedProspect(null);
         }}
-        prospect={selectedProspect}
+        prospect={selectedProspect as ProspectWithId}
       />
 
       {/* Toast notifications */}

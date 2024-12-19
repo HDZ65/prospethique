@@ -1,7 +1,6 @@
 import { z } from 'zod';
 import { schemaProspect, STATUTS } from '@/schemas/prospect-schema';
 import { Timestamp } from 'firebase-admin/firestore';
-import { schemaMail } from '@/schemas/mail.schema';
 
 // Types de base
 export type ActionResponse<T = void> = {
@@ -13,12 +12,7 @@ export type ActionResponse<T = void> = {
 
 // Types métier
 export type Prospect = z.infer<typeof schemaProspect>;
-export type Mail = z.infer<typeof schemaMail>;
 
-export type MailResponse = Mail & {
-  id: string;
-  dateEnvoi: Timestamp;
-};
 
 export type ProspectResponse = Prospect & {
   id: string;

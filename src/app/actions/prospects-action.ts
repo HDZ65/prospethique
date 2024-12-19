@@ -44,7 +44,7 @@ export const getProspects = actionClient
 
         return {
           ...validatedData,
-          dateCreation: data.dateCreation.toDate(),
+          dateCreation: data.dateCreation.toDate().toISOString(),
           id: doc.id,
         };
       });
