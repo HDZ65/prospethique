@@ -14,7 +14,7 @@ export const AddProspectForm = () => {
   const { execute, result, isExecuting, hasSucceeded, hasErrored } = useAction(addProspect);
 
   return (
-    <section className="bg-gradient-glass backdrop-blur-glass rounded-lg p-6 border border-white/10 shadow-glass max-w-[1200px] mx-auto">
+    <section className="bg-gradient-glass backdrop-blur-glass rounded-lg p-6 border border-white/10 shadow-glass mx-auto w-2/5">
 
       {/* Titre */}
       <div className="flex items-center gap-3 mb-8">

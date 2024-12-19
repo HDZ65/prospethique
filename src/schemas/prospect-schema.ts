@@ -2,7 +2,7 @@ import { z } from 'zod';
 import { zfd } from 'zod-form-data';
 
 // Énumérations des statuts
-export const STATUTS = ['À contacter', 'Relance', 'Refusé', 'Email envoyé', 'Accepté'] as const;
+export const STATUTS = ['Email envoyé', 'À contacter', 'Refusé', 'Accepté'] as const;
 
 // Schéma de base (sans ID pour la création)
 export const schemaProspect = zfd.formData({
@@ -31,7 +31,10 @@ export const schemaProspectWithId = zfd.formData({
   ),
 });
 
-
+// Schéma pour la suppression
+export const deleteProspectSchema = zfd.formData({
+  id: zfd.text(z.string().min(1, "L'ID est requis"))
+});
 
 // Types dérivés
 export type Prospect = z.infer<typeof schemaProspect>;

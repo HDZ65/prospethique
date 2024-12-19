@@ -26,7 +26,6 @@ export type typeProspect = {
   contact: string;
   statut: typeof STATUTS[number];
   notes?: string;
-  mails?: string[];
 };
 
 // Type pour les mails

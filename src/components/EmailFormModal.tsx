@@ -75,7 +75,7 @@ export const EmailFormModal = ({ isOpen, onClose, prospect }: EmailFormModalProp
                         initial={{ opacity: 0 }}
                         animate={{ opacity: 1 }}
                         exit={{ opacity: 0 }}
-                        className="fixed inset-0 bg-black/50 backdrop-blur-sm"
+                        className="fixed inset-0 bg-black/60 backdrop-blur-sm"
                         aria-hidden="true"
                     />
 
@@ -84,7 +84,7 @@ export const EmailFormModal = ({ isOpen, onClose, prospect }: EmailFormModalProp
                         initial={{ scale: 0.95, opacity: 0 }}
                         animate={{ scale: 1, opacity: 1 }}
                         exit={{ scale: 0.95, opacity: 0 }}
-                        className="relative w-full max-w-lg bg-gradient-glass backdrop-blur-glass rounded-lg border border-white/10 shadow-glass overflow-hidden"
+                        className="relative w-full max-w-lg bg-black/50 backdrop-blur-glass rounded-lg border border-white/10 shadow-glass overflow-hidden"
                         role="dialog"
                         aria-modal="true"
                         aria-labelledby="modal-title"
@@ -103,9 +103,9 @@ export const EmailFormModal = ({ isOpen, onClose, prospect }: EmailFormModalProp
                                 </button>
                             </div>
 
-                            <form onSubmit={handleFormSubmit} className="space-y-4">
+                            <form onSubmit={handleFormSubmit} className="space-y-6">
                                 {/* Informations du prospect (en lecture seule) */}
-                                <div className="bg-surface/40 p-4 rounded-lg space-y-2">
+                                <div className="bg-surface/90 p-6 rounded-lg space-y-2">
                                     <p className="text-sm text-text-secondary">
                                         <span className="font-medium">Contact :</span> {prospect.contact}
                                     </p>
@@ -118,20 +118,20 @@ export const EmailFormModal = ({ isOpen, onClose, prospect }: EmailFormModalProp
                                 </div>
 
                                 {/* Liste des améliorations */}
-                                <div>
-                                    <label className="block text-sm font-medium text-text-secondary mb-1">
-                                        Liste des améliorations
+                                <div className="mt-6">
+                                    <label className="block text-base font-medium text-text-secondary mb-2">
+                                        Liste des améliorations à apporter :
                                     </label>
-                                    <div className="space-y-4">
+                                    <div className="space-y-6">
                                         {/* Input pour ajouter une amélioration */}
-                                        <div className="flex items-center gap-2">
+                                        <div className="flex items-center gap-6">
                                             <input
                                                 type="text"
                                                 value={newAmelioration}
                                                 onChange={(e) => setNewAmelioration(e.target.value)}
                                                 onKeyPress={handleKeyPress}
                                                 placeholder="Ajouter une amélioration..."
-                                                className="flex-1 bg-surface/80 px-4 py-2 rounded-lg border border-white/10 text-text-primary"
+                                                className="flex-1 bg-surface/90 px-4 py-2 rounded-lg border border-white/10 text-text-primary"
                                             />
                                             <button
                                                 type="button"
@@ -146,7 +146,7 @@ export const EmailFormModal = ({ isOpen, onClose, prospect }: EmailFormModalProp
                                         </div>
 
                                         {/* Liste des améliorations */}
-                                        <div className="space-y-2">
+                                        <div className="space-y-6">
                                             <AnimatePresence>
                                                 {formData.ameliorationList.map((amelioration, index) => (
                                                     <motion.div
@@ -154,13 +154,13 @@ export const EmailFormModal = ({ isOpen, onClose, prospect }: EmailFormModalProp
                                                         initial={{ opacity: 0, y: -10 }}
                                                         animate={{ opacity: 1, y: 0 }}
                                                         exit={{ opacity: 0, x: -10 }}
-                                                        className="flex items-center justify-between bg-surface/40 px-4 py-2 rounded-lg"
+                                                        className="flex items-center justify-between bg-surface/90 px-4 py-2 rounded-lg"
                                                     >
                                                         <span className="text-sm text-text-primary">{amelioration}</span>
                                                         <button
                                                             type="button"
                                                             onClick={() => handleRemoveAmelioration(index)}
-                                                            className="p-1 hover:bg-surface/60 rounded-full transition-colors duration-150"
+                                                            className="p-2 hover:bg-surface/60 rounded-full transition-colors duration-150"
                                                             aria-label="Supprimer l'amélioration"
                                                         >
                                                             <Trash2 className="w-4 h-4 text-red-400" />
@@ -172,62 +172,65 @@ export const EmailFormModal = ({ isOpen, onClose, prospect }: EmailFormModalProp
                                     </div>
                                 </div>
 
-                                {/* Recherche */}
-                                <div>
-                                    <label htmlFor="recherche" className="block text-sm font-medium text-text-secondary mb-1">
-                                        Terme de recherche
-                                    </label>
-                                    <input
-                                        type="text"
-                                        id="recherche"
-                                        name="recherche"
-                                        value={formData.recherche}
-                                        onChange={handleChange}
-                                        placeholder="ex: les agences web"
-                                        className="w-full bg-surface/80 px-4 py-2 rounded-lg border border-white/10 text-text-primary"
-                                    />
-                                </div>
+                                {/* Groupe des champs de recherche */}
+                                <div className="grid gap-6 mt-6">
+                                    {/* Recherche */}
+                                    <div>
+                                        <label className="block text-base font-medium text-text-secondary mb-2">
+                                            Lors de mes recherches sur ...
+                                        </label>
+                                        <input
+                                            type="text"
+                                            id="recherche"
+                                            name="recherche"
+                                            value={formData.recherche}
+                                            onChange={handleChange}
+                                            placeholder="ex: les agences web"
+                                            className="w-full bg-surface/90 px-4 py-2 rounded-lg border border-white/10 text-text-primary"
+                                        />
+                                    </div>
 
-                                {/* Mot clé */}
-                                <div>
-                                    <label htmlFor="motCle" className="block text-sm font-medium text-text-secondary mb-1">
-                                        Mot clé principal
-                                    </label>
-                                    <input
-                                        type="text"
-                                        id="motCle"
-                                        name="motCle"
-                                        value={formData.motCle}
-                                        onChange={handleChange}
-                                        placeholder="ex: agence web"
-                                        className="w-full bg-surface/80 px-4 py-2 rounded-lg border border-white/10 text-text-primary"
-                                    />
-                                </div>
+                                    {/* Mot clé */}
+                                    <div>
+                                        <label className="block text-base font-medium text-text-secondary mb-2">
+                                            Avec le mot clé ...
+                                        </label>
+                                        <input
+                                            type="text"
+                                            id="motCle"
+                                            name="motCle"
+                                            value={formData.motCle}
+                                            onChange={handleChange}
+                                            placeholder="ex: agence web"
+                                            className="w-full bg-surface/90 px-4 py-2 rounded-lg border border-white/10 text-text-primary"
+                                        />
+                                    </div>
 
-                                {/* Numéro de page */}
-                                <div>
-                                    <label htmlFor="numeroPage" className="block text-sm font-medium text-text-secondary mb-1">
-                                        Numéro de page dans Google
-                                    </label>
-                                    <input
-                                        type="number"
-                                        id="numeroPage"
-                                        name="numeroPage"
-                                        value={formData.numeroPage}
-                                        onChange={handleChange}
-                                        placeholder="ex: 60"
-                                        min="1"
-                                        className="w-full bg-surface/80 px-4 py-2 rounded-lg border border-white/10 text-text-primary"
-                                    />
+                                    {/* Numéro de page */}
+                                    <div>
+                                        <label className="block text-base font-medium text-text-secondary mb-2">
+                                            On a trouvé votre site sur la page ...
+                                        </label>
+                                        <input
+                                            type="number"
+                                            id="numeroPage"
+                                            name="numeroPage"
+                                            value={formData.numeroPage}
+                                            onChange={handleChange}
+                                            placeholder="ex: 6"
+                                            min="1"
+                                            className="w-full bg-surface/90 px-4 py-2 rounded-lg border border-white/10 text-text-primary"
+                                        />
+                                    </div>
                                 </div>
 
                                 {error && (
-                                    <div id="email-error" className="text-red-400 text-sm mt-2" role="alert">
+                                    <div id="email-error" className="text-red-400 text-sm mt-6 p-6 bg-red-400/10 rounded-lg" role="alert">
                                         {error}
                                     </div>
                                 )}
 
-                                <div className="flex justify-end gap-3 mt-6">
+                                <div className="flex justify-end gap-6 mt-6">
                                     <button
                                         type="button"
                                         onClick={onClose}
@@ -238,7 +241,7 @@ export const EmailFormModal = ({ isOpen, onClose, prospect }: EmailFormModalProp
                                     <button
                                         type="submit"
                                         disabled={isLoading}
-                                        className="bg-primary hover:bg-primary-dark text-text-primary px-4 py-2 rounded-lg transition-colors duration-150 flex items-center gap-2 text-sm font-medium disabled:opacity-50"
+                                        className="bg-primary hover:bg-primary-dark text-text-primary px-4 py-2 rounded-lg transition-colors duration-150 flex items-center gap-4 text-sm font-medium disabled:opacity-50"
                                     >
                                         {isLoading ? 'Envoi en cours...' : 'Envoyer'}
                                     </button>
@@ -263,7 +266,7 @@ export const EmailFormModal = ({ isOpen, onClose, prospect }: EmailFormModalProp
                                     initial={{ opacity: 0 }}
                                     animate={{ opacity: 1 }}
                                     exit={{ opacity: 0 }}
-                                    className="fixed inset-0 bg-black/50 backdrop-blur-sm"
+                                    className="fixed inset-0 bg-black/60 backdrop-blur-sm"
                                 />
 
                                 <motion.div
@@ -286,7 +289,7 @@ export const EmailFormModal = ({ isOpen, onClose, prospect }: EmailFormModalProp
                                                 </p>
                                                 
                                                 {/* Résumé des données */}
-                                                <div className="bg-surface/40 p-3 rounded-lg space-y-2 mb-4">
+                                                <div className="bg-surface/90 p-3 rounded-lg space-y-2 mb-4">
                                                     {formData.ameliorationList.length > 0 && (
                                                         <div className="text-sm text-text-secondary">
                                                             <span className="font-medium">Améliorations :</span>
