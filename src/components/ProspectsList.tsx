@@ -2,10 +2,11 @@
 
 import { useState } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { Users, Mail, Calendar, MoreVertical, Search, Pencil, Trash2} from 'lucide-react';
+import { Users, Mail, Calendar, Search, Pencil, Trash2 } from 'lucide-react';
 import { ProspectWithId } from '@/schemas/prospect-schema';
 import Link from 'next/link';
 import { Toast } from '@/components/ui/Toast';
+import { EmailFormModal } from '@/components/EmailFormModal';
 
 interface ProspectsListProps {
   prospects: Array<ProspectWithId>;
@@ -13,13 +14,13 @@ interface ProspectsListProps {
 
 export const ProspectsList = ({ prospects }: ProspectsListProps) => {
   const [searchTerm, setSearchTerm] = useState('');
-  const [activeMenu, setActiveMenu] = useState<string | null>(null);
   const [toast, setToast] = useState<{ type: 'success' | 'error'; message: string } | null>(null);
+  const [isEmailModalOpen, setIsEmailModalOpen] = useState(false);
+  const [selectedProspect, setSelectedProspect] = useState<ProspectWithId | null>(null);
 
-  const filteredProspects = prospects.filter(prospect => 
-    prospect.entreprise.toLowerCase().includes(searchTerm.toLowerCase()) ||
-    prospect.contact.toLowerCase().includes(searchTerm.toLowerCase()) ||
-    prospect.mails?.some(mail => mail.email.toLowerCase().includes(searchTerm.toLowerCase()))
+  const filteredProspects = prospects.filter(prospect =>
+    prospect.site.toLowerCase().includes(searchTerm.toLowerCase()) ||
+    prospect.contact.toLowerCase().includes(searchTerm.toLowerCase())
   );
 
   const formatDate = (dateString: string) => {
@@ -30,20 +31,28 @@ export const ProspectsList = ({ prospects }: ProspectsListProps) => {
     });
   };
 
+  const handleDelete = async (id: string) => {
+    console.log(id);
+  };
+
+  const handleOpenEmailModal = (prospect: ProspectWithId) => {
+    setSelectedProspect(prospect);
+    setIsEmailModalOpen(true);
+  };
+
   return (
     <>
       <motion.div
         initial={{ opacity: 0, y: 10 }}
         animate={{ opacity: 1, y: 0 }}
         transition={{ duration: 0.2, ease: "easeOut" }}
-        className="bg-gradient-glass backdrop-blur-glass rounded-lg border border-white/10 
-                   shadow-glass overflow-hidden"
+        className="bg-gradient-glass backdrop-blur-glass rounded-lg border border-white/10 shadow-glass overflow-hidden"
       >
         {/* Header */}
         <div className="p-6 border-b border-white/10">
           <div className="flex items-center justify-between mb-6">
             <div className="flex items-center gap-3">
-              <motion.div 
+              <motion.div
                 className="p-2 rounded-lg bg-surface/80 border border-white/5"
                 whileHover={{ scale: 1.05 }}
                 transition={{ duration: 0.15 }}
@@ -56,9 +65,7 @@ export const ProspectsList = ({ prospects }: ProspectsListProps) => {
             </div>
             <Link
               href="/prospects/add"
-              className="bg-primary hover:bg-primary-dark text-text-primary 
-                       px-4 py-2 rounded-lg transition-colors duration-150
-                       flex items-center gap-2 text-sm font-medium"
+              className="bg-primary hover:bg-primary-dark text-text-primary px-4 py-2 rounded-lg transition-colors duration-150 flex items-center gap-2 text-sm font-medium"
             >
               Nouveau prospect
             </Link>
@@ -71,12 +78,7 @@ export const ProspectsList = ({ prospects }: ProspectsListProps) => {
               placeholder="Rechercher un prospect..."
               value={searchTerm}
               onChange={(e) => setSearchTerm(e.target.value)}
-              className="w-full bg-surface/80 px-4 py-2.5 pl-10 rounded-lg
-                       border border-white/10 text-text-primary
-                       shadow-input placeholder-text-tertiary
-                       focus:border-primary/30 focus:ring-0
-                       hover:border-white/20
-                       transition-all duration-150"
+              className="w-full bg-surface/80 px-4 py-2.5 pl-10 rounded-lg border border-white/10 text-text-primary shadow-input placeholder-text-tertiary focus:border-primary/30 focus:ring-0 hover:border-white/20 transition-all duration-150"
             />
             <Search className="w-4 h-4 absolute left-3 top-1/2 -translate-y-1/2 text-text-tertiary" />
           </div>
@@ -96,13 +98,13 @@ export const ProspectsList = ({ prospects }: ProspectsListProps) => {
                 <div className="flex-1 min-w-0">
                   <div className="flex items-center gap-3 mb-2">
                     <h3 className="text-text-primary font-medium truncate">
-                      {prospect.entreprise}
+                      {prospect.site}
                     </h3>
                     <span className={`px-2 py-1 rounded-full text-xs font-medium
                       ${prospect.statut === 'À contacter' ? 'bg-yellow-500/10 text-yellow-400' :
                         prospect.statut === 'Accepté' ? 'bg-green-500/10 text-green-400' :
-                        prospect.statut === 'Refusé' ? 'bg-red-500/10 text-red-400' :
-                        'bg-blue-500/10 text-blue-400'}`}
+                          prospect.statut === 'Refusé' ? 'bg-red-500/10 text-red-400' :
+                            'bg-blue-500/10 text-blue-400'}`}
                     >
                       {prospect.statut}
                     </span>
@@ -120,33 +122,28 @@ export const ProspectsList = ({ prospects }: ProspectsListProps) => {
                     </div>
                   </div>
                 </div>
-                <div className="relative">
-                  <button 
-                    onClick={() => setActiveMenu(activeMenu === prospect.id ? null : prospect.id)}
-                    className="p-2 hover:bg-surface rounded-full transition-colors duration-150"
+                <div className="relative flex items-center gap-1">
+                  <Link
+                    href={`/prospects/${prospect.id}/edit`}
+                    className="flex items-center gap-2 px-3 py-1.5 text-sm text-text-secondary hover:text-text-primary rounded-md hover:bg-surface/40 transition-all duration-150"
                   >
-                    <MoreVertical className="w-5 h-5 text-text-tertiary" />
+                    <Pencil className="w-4 h-4" />
+                    <span className="hidden sm:inline">Modifier</span>
+                  </Link>
+                  <button
+                    onClick={() => handleOpenEmailModal(prospect)}
+                    className="flex items-center gap-2 px-3 py-1.5 text-sm text-text-secondary hover:text-text-primary rounded-md hover:bg-surface/40 transition-all duration-150"
+                  >
+                    <Mail className="w-4 h-4" />
+                    <span className="hidden sm:inline">Email</span>
                   </button>
-
-                  {/* Menu contextuel */}
-                  {activeMenu === prospect.id && (
-                    <div className="absolute right-0 mt-2 w-48 rounded-lg bg-surface border border-white/10 shadow-lg overflow-hidden">
-                      <Link
-                        href={`/prospects/${prospect.id}/edit`}
-                        className="flex items-center gap-2 px-4 py-2 text-sm text-text-primary hover:bg-white/5"
-                      >
-                        <Pencil className="w-4 h-4" />
-                        Modifier
-                      </Link>
-                      <button
-                        onClick={() => handleDelete(prospect.id)}
-                        className="flex items-center gap-2 px-4 py-2 text-sm text-red-400 hover:bg-white/5 w-full text-left"
-                      >
-                        <Trash2 className="w-4 h-4" />
-                        Supprimer
-                      </button>
-                    </div>
-                  )}
+                  <button
+                    onClick={() => handleDelete(prospect.id)}
+                    className="flex items-center gap-2 px-3 py-1.5 text-sm text-text-secondary hover:text-red-400 rounded-md hover:bg-red-500/5 transition-all duration-150"
+                  >
+                    <Trash2 className="w-4 h-4" />
+                    <span className="hidden sm:inline">Supprimer</span>
+                  </button>
                 </div>
               </div>
             </motion.div>
@@ -159,6 +156,15 @@ export const ProspectsList = ({ prospects }: ProspectsListProps) => {
           )}
         </div>
       </motion.div>
+
+      <EmailFormModal
+        isOpen={isEmailModalOpen}
+        onClose={() => {
+          setIsEmailModalOpen(false);
+          setSelectedProspect(null);
+        }}
+        prospect={selectedProspect}
+      />
 
       {/* Toast notifications */}
       <AnimatePresence>

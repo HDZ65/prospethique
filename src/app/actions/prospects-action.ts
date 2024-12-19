@@ -85,16 +85,13 @@ export const addProspect = actionClient
         notes: prospectData.notes || ''
       };
 
-      // Vérifier que toutes les données sont présentes
-      console.log('Données finales:', JSON.stringify(newProspectData));
-
       const docRef = await db.collection('prospects').add(newProspectData);
 
       if (!docRef.id) {
         throw new Error("Échec de la création du document");
       }
 
-      revalidatePath('/prospects');
+      revalidatePath('/');
       
       return {
         data: true,

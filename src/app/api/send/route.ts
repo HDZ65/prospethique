@@ -7,14 +7,11 @@ export async function POST(request: Request) {
   const { email, contact, website, ameliorationList, recherche, motCle, numeroPage } = await request.json();
 
   try {
-    console.log('email', email);
-    console.log('contact', contact);
-    console.log('website', website);
-    console.log('ameliorationList', ameliorationList);
+
     const { data, error } = await resend.emails.send({
-      from: 'Acme <contact@devethique.fr>',
+      from: '"Agence Devethique" <contact@devethique.fr>',
       to: [email],
-      subject: 'Hello world',
+      subject: `Optimisation Web Personnalisée pour ${contact}`,
       react: EmailTemplate({ contact, website, ameliorationList, recherche, motCle, numeroPage }),
     });
 

@@ -48,8 +48,9 @@ export const EmailTemplate: React.FC<Readonly<EmailTemplateProps>> = ({
                   <table role="presentation" cellPadding="0" cellSpacing="0" style={{ width: '100%' }}>
                     <tr>
                       <td style={{ width: '70px', verticalAlign: 'top' }}>
+                        {/* <img src="https://media.licdn.com/dms/image/v2/D4D0BAQE0DL8_084zMw/company-logo_100_100/company-logo_100_100/0/1734451834868/devethique_logo?e=1742428800&v=beta&t=-BMlKnMdQ3pXE_MKMfkdt97SpkR96YWwJNlndTZrbj8" alt="Devethique Logo" width="70" height="70" */}
                         {/* eslint-disable-next-line @next/next/no-img-element */}
-                        <img src="https://media.licdn.com/dms/image/v2/D4D0BAQE0DL8_084zMw/company-logo_100_100/company-logo_100_100/0/1734451834868/devethique_logo?e=1742428800&v=beta&t=-BMlKnMdQ3pXE_MKMfkdt97SpkR96YWwJNlndTZrbj8" alt="Devethique Logo" width="70" height="70"
+                        <img src="https://www.devethique.fr/logo.png" alt="Devethique Logo" width="70" height="70"
                           style={{ display: 'block', width: '70px', height: 'auto' }} />
                       </td>
                       <td style={{ paddingLeft: '24px', verticalAlign: 'middle' }}>
