@@ -3,15 +3,22 @@
 // Imports
 import { STATUTS } from '@/schemas/prospect-schema';
 import { Users } from 'lucide-react';
-import { useAction } from 'next-safe-action/hooks';
-import { addProspect } from '@/app/actions/prospects-action';
-
+import { AddProspectActionResult } from '@/app/actions/prospects-action';
 // Styles
 const inputStyles = `w-full bg-surface/80 px-4 py-2.5 rounded-lg border border-white/10 text-text-primary shadow-input placeholder-text-tertiary focus:border-primary/30 focus:ring-0 hover:border-white/20 transition-all duration-150`;
 const labelStyles = "text-sm font-medium text-text-secondary";
 
-export const AddProspectForm = () => {
-  const { execute, result, isExecuting, hasSucceeded, hasErrored } = useAction(addProspect);
+
+
+interface AddProspectFormProps {
+  execute: (data: FormData) => void;
+  result: AddProspectActionResult & { validationErrors?: { [key: string]: { _errors: string[] } } };
+  isExecuting: boolean;
+  hasSucceeded: boolean;
+  hasErrored: boolean;
+}
+
+export const AddProspectForm = ({ execute, result, isExecuting, hasSucceeded, hasErrored }: AddProspectFormProps) => {
 
   return (
     <section className="bg-gradient-glass backdrop-blur-glass rounded-lg p-6 border border-white/10 shadow-glass mx-auto w-2/5">
@@ -107,23 +114,18 @@ export const AddProspectForm = () => {
         </div>
 
         {/* Message de succès/erreur global */}
-        {hasSucceeded && (
-          <div className="text-green-500 mt-4 text-center">{result?.data?.message}</div>
+        {hasSucceeded && result.data?.message && (
+          <div className="text-green-500 mt-4 text-center">{result.data.message}</div>
         )}
-        {hasErrored && result?.validationErrors?._errors && (
-          <div className="text-red-500 mt-4 text-center">
-            {result.validationErrors._errors[0]}
-          </div>
+        {hasErrored && result?.validationErrors && (
+          <div className="text-red-500 mt-4 text-center">{result.validationErrors._errors._errors || "Erreur inconnue"}</div>
         )}
 
         {/* Bouton de soumission */}
         <button
           type="submit"
           disabled={isExecuting}
-          className="w-full bg-primary hover:bg-primary-dark text-text-primary 
-                 font-medium py-3 px-4 rounded-lg shadow-button
-                 disabled:opacity-50 disabled:cursor-not-allowed
-                 transition-all duration-150"
+          className="w-full bg-primary hover:bg-primary-dark text-text-primary font-medium py-3 px-4 rounded-lg shadow-button disabled:opacity-50 disabled:cursor-not-allowed transition-all duration-150"
         >
           {isExecuting ? 'Ajout en cours...' : 'Ajouter le prospect'}
         </button>

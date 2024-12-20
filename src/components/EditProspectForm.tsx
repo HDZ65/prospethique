@@ -55,7 +55,7 @@ export const EditProspectForm: FC<EditProspectFormProps> = ({ prospect }) => {
                  border border-white/10 shadow-glass max-w-2xl mx-auto"
     >
       <div className="flex items-center gap-3 mb-8">
-        <motion.div 
+        <motion.div
           className="p-2 rounded-lg bg-surface/80 border border-white/5"
           whileHover={{ scale: 1.05 }}
           transition={{ duration: 0.15 }}
@@ -130,12 +130,7 @@ export const EditProspectForm: FC<EditProspectFormProps> = ({ prospect }) => {
           <select
             value={formData.statut}
             onChange={(e) => setFormData(prev => ({ ...prev, statut: e.target.value as Prospect['statut'] }))}
-            className="w-full bg-surface/80 px-4 py-2.5 rounded-lg
-                     border border-white/10 text-text-primary
-                     shadow-input
-                     focus:border-primary/30 focus:ring-0
-                     hover:border-white/20
-                     transition-all duration-150"
+            className="w-full bg-surface/80 px-4 py-2.5 rounded-lg border border-white/10 text-text-primary shadow-input focus:border-primary/30 focus:ring-0 hover:border-white/20 transition-all duration-150"
           >
             {['À contacter', 'Email envoyé', 'Relance', 'Accepté', 'Refusé'].map((statut) => (
               <option key={statut} value={statut} className="bg-surface text-text-primary">

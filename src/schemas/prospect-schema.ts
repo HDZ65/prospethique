@@ -39,3 +39,5 @@ export const deleteProspectSchema = zfd.formData({
 // Types dérivés
 export type Prospect = z.infer<typeof schemaProspect>;
 export type ProspectWithId = z.infer<typeof schemaProspectWithId> & { dateCreation: string } & { id: string };
+export type DeleteProspect = z.infer<typeof deleteProspectSchema>;
+export type AddProspect = z.infer<typeof schemaProspect> & { id: string, prospect: ProspectWithId };

@@ -1,11 +1,19 @@
 'use server'
 
 import { db } from '@/lib/firebase-admin';
-import { schemaProspect, schemaProspectWithId, deleteProspectSchema } from '@/schemas/prospect-schema';
+import { schemaProspect, schemaProspectWithId, deleteProspectSchema, ProspectWithId } from '@/schemas/prospect-schema';
 import { Timestamp } from 'firebase-admin/firestore';
 import { revalidatePath } from 'next/cache';
-import { ProspectResponse} from '@/types';
+import { ProspectResponse } from '@/types';
 import { actionClient } from "@/lib/safe-action";
+
+// Types de retour pour les actions
+export type AddProspectActionResult = {
+  data: {
+    message: string;
+    prospect: ProspectWithId;
+  };
+};
 
 // GET
 export const getProspects = actionClient
@@ -75,13 +83,11 @@ export const addProspect = actionClient
         throw new Error("Erreur d'accès à la collection prospects");
       }
 
-      // Convertir les données en objet simple
       const newProspectData = {
         ...prospectData,
         dateCreation: Timestamp.fromDate(new Date()),
         dateRelanceOptimale: Timestamp.fromMillis(Date.now() + 7 * 24 * 60 * 60 * 1000),
-        statut: 'À contacter',
-        // S'assurer que notes n'est pas undefined
+        statut: 'À contacter' as const,
         notes: prospectData.notes || ''
       };
 
@@ -92,16 +98,20 @@ export const addProspect = actionClient
       }
 
       revalidatePath('/');
-      
+
       return {
-        data: true,
-        message: 'Prospect ajouté avec succès'
+        message: 'Prospect ajouté avec succès',
+        prospect: {
+          ...prospectData,
+          id: docRef.id,
+          dateCreation: newProspectData.dateCreation.toDate().toISOString(),
+          statut: newProspectData.statut
+        }
       };
     } catch (error) {
       console.error('Erreur complète:', error);
       return {
-        failure: 'Erreur lors de la création du prospect',
-        error: error instanceof Error ? error.message : 'Erreur inconnue'
+        failure: 'Erreur lors de la création du prospect'
       };
     }
   });
@@ -109,7 +119,7 @@ export const addProspect = actionClient
 // UPDATE
 export const updateProspect = actionClient
   .schema(schemaProspectWithId)
-  .action(async ({ parsedInput : prospectWithId }) => {
+  .action(async ({ parsedInput: prospectWithId }) => {
 
     try {
       if (!db?.collection('prospects')) {

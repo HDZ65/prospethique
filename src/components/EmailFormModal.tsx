@@ -28,7 +28,7 @@ export const EmailFormModal = ({ isOpen, onClose, prospect }: EmailFormModalProp
     const [newAmelioration, setNewAmelioration] = useState('');
     const [showConfirm, setShowConfirm] = useState(false);
 
-    const handleKeyPress = (e: KeyboardEvent<HTMLInputElement>) => {
+    const handleKeyPress = (e: KeyboardEvent<HTMLTextAreaElement>) => {
         if (e.key === 'Enter') {
             e.preventDefault();
             handleAddAmelioration(newAmelioration);
@@ -124,9 +124,10 @@ export const EmailFormModal = ({ isOpen, onClose, prospect }: EmailFormModalProp
                                     </label>
                                     <div className="space-y-6">
                                         {/* Input pour ajouter une amélioration */}
-                                        <div className="flex items-center gap-6">
-                                            <input
-                                                type="text"
+                                        <div className="flex items-start gap-6 ">
+                                            <textarea
+                                                cols={0}
+                                                rows={3}
                                                 value={newAmelioration}
                                                 onChange={(e) => setNewAmelioration(e.target.value)}
                                                 onKeyPress={handleKeyPress}

@@ -48,7 +48,6 @@ export const EmailTemplate: React.FC<Readonly<EmailTemplateProps>> = ({
                   <table role="presentation" cellPadding="0" cellSpacing="0" style={{ width: '100%' }}>
                     <tr>
                       <td style={{ width: '70px', verticalAlign: 'top' }}>
-                        {/* <img src="https://media.licdn.com/dms/image/v2/D4D0BAQE0DL8_084zMw/company-logo_100_100/company-logo_100_100/0/1734451834868/devethique_logo?e=1742428800&v=beta&t=-BMlKnMdQ3pXE_MKMfkdt97SpkR96YWwJNlndTZrbj8" alt="Devethique Logo" width="70" height="70" */}
                         {/* eslint-disable-next-line @next/next/no-img-element */}
                         <img src="https://www.devethique.fr/logo.png" alt="Devethique Logo" width="70" height="70"
                           style={{ display: 'block', width: '70px', height: 'auto' }} />
@@ -91,7 +90,7 @@ export const EmailTemplate: React.FC<Readonly<EmailTemplateProps>> = ({
                     </p>
 
                     <p>
-                      Je suis Alexandre Hernandez, développeur web chez Devethique, une agence spécialisée
+                      Je suis Alexandre Hernandez, développeur web chez <b>Devethique</b>, une agence spécialisée
                       dans la création de sites web.
                     </p>
 
@@ -115,13 +114,13 @@ export const EmailTemplate: React.FC<Readonly<EmailTemplateProps>> = ({
 
                     <p className="personal-touch">
                       En parallèle, le mot-clé &quot;{motCle}&quot; est un mot clé très recherché sur
-                      Google, mais votre site apparaît actuellement en {numeroPage}ème page. Avec une stratégie
+                      Google, <b>mais votre site apparaît actuellement en {numeroPage}ème page</b>. Avec une stratégie
                       ciblée d&apos;optimisation SEO, il serait possible de gagner en visibilité et d&apos;attirer
                       davantage de prospects.
                     </p>
 
                     <p className="call-to-action">
-                      Accepteriez-vous un échange de 20 minutes pour que je puisse vous présenter nos
+                      Accepteriez-vous un échange de <b>20 minutes</b> pour que je puisse vous présenter nos
                       solutions ?
                     </p>
 
