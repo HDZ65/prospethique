@@ -1,7 +1,7 @@
 import './globals.css';
 import { Inter } from 'next/font/google';
 import { Header } from '@/components/Header';
-import { ToastProvider } from '@/contexts/ToastContext';
+import { Providers } from '@/components/providers';
 
 const inter = Inter({ subsets: ['latin'] });
 
@@ -18,10 +18,10 @@ export default function RootLayout({
   return (
     <html lang="fr">
       <body className={inter.className}>
-        <ToastProvider>
-          <Header />
-          <main className="bg-gray-900 min-h-screen">{children}</main>
-        </ToastProvider>
+            <Providers>
+            <Header />
+            <main className="bg-gray-900 min-h-screen">{children}</main>
+          </Providers>
       </body>
     </html>
   );

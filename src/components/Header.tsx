@@ -1,7 +1,7 @@
 'use client';
 
 import Link from 'next/link';
-import { Search, Users, Calendar, Clock } from 'lucide-react';
+import { Search, Users, Calendar, Clock, Linkedin } from 'lucide-react';
 
 /**
  * @title Composant Header
@@ -15,6 +15,7 @@ export const Header = () => {
   const menuItems = [
     { href: '/calendar', icon: <Calendar className="w-5 h-5" />, label: 'Calendrier' },
     { href: '/tasks', icon: <Clock className="w-5 h-5" />, label: 'Tâches' },
+    { href: '/linkedin', icon: <Linkedin className="w-5 h-5" />, label: 'LinkedIn' },
   ];
 
   return (
