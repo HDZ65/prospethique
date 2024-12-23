@@ -1,7 +1,11 @@
 {
   "compilerOptions": {
     "target": "ES2017",
-    "lib": ["dom", "dom.iterable", "esnext"],
+    "lib": [
+      "dom",
+      "dom.iterable",
+      "esnext"
+    ],
     "allowJs": true,
     "skipLibCheck": true,
     "strict": true,
@@ -19,9 +23,47 @@
       }
     ],
     "paths": {
-      "@/*": ["./src/*"]
+      "@/*": [
+        "./src/*"
+      ],
+      "@components/*": [
+        "./src/components/ui/*"
+      ],
+      "@firebase/*": [
+        "./src/libs/firebase/*"
+      ],
+      "@auth/*": [
+        "./src/libs/auth/*"
+      ],
+      "@config/*": [
+        "./src/libs/config/*"
+      ],
+      "@safe-action": [
+        "./src/libs/safe-action.ts"
+      ],
+      "@actions/*": [
+        "./src/_actions/*"
+      ],
+      "@services/*": [
+        "./src/_services/*"
+      ],
+      "@pages/*": [
+        "./src/app/(pages)/*"
+      ],
+      "@dashboard/*": [
+        "./src/app/(pages)/dashboard/*"
+      ],
     }
   },
-  "include": ["next-env.d.ts", "**/*.ts", "**/*.tsx", ".next/types/**/*.ts"],
-  "exclude": ["node_modules"]
+  "include": [
+    "next-env.d.ts",
+    "**/*.ts",
+    "**/*.tsx",
+    ".next/types/**/*.ts",
+    "src/data/navigation.tsx"
+  ],
+  "exclude": [
+    "node_modules",
+    "src/components/primitives/**/*"
+  ]
 }
