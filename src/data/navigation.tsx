@@ -61,7 +61,7 @@ export const navigationConfig: NavigationConfig = {
         },
     ],
     branding: {
-        name: 'ProspEthique',
+        name: 'Prospethique',
         logo: {
             icon: <Users className="h-5 w-5 text-primary" />,
             authenticatedHref: '/dashboard',
