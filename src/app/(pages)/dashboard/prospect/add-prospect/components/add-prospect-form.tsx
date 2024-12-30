@@ -34,11 +34,9 @@ interface AddProspectFormProps {
   execute: (data: FormData) => void;
   result: AddProspectActionResult & { validationErrors?: { [key: string]: { _errors: string[] } } };
   isExecuting: boolean;
-  hasSucceeded: boolean;
-  hasErrored: boolean;
 }
 
-export const AddProspectForm = ({ execute, result, isExecuting, hasSucceeded, hasErrored }: AddProspectFormProps) => {
+export const AddProspectForm = ({ execute, result, isExecuting }: AddProspectFormProps) => {
   const renderField = (field: FormField) => {
     const error = result?.validationErrors?.[field.id]?._errors;
     const commonProps = {
@@ -71,7 +69,7 @@ export const AddProspectForm = ({ execute, result, isExecuting, hasSucceeded, ha
   };
 
   return (
-    <section className="bg-gradient-glass backdrop-blur-glass rounded-lg p-6 border border-white/10 shadow-glass mx-auto w-4/5">
+    <section className="bg-gradient-glass backdrop-blur-glass rounded-lg px-4 py-6 shadow-glass max-w-2xl mx-auto">
       <div className="flex items-center gap-3 mb-8">
         <span className="p-2 rounded-lg bg-muted/60 border border-white/5">
           <Users className="w-5 h-5 text-primary" aria-hidden="true" />
@@ -79,7 +77,7 @@ export const AddProspectForm = ({ execute, result, isExecuting, hasSucceeded, ha
         <h1 className="text-xl font-medium text-text-primary">Nouveau prospect</h1>
       </div>
 
-      <form action={execute} className="space-y-5">
+      <form action={execute} className="space-y-5" noValidate>
         {FORM_FIELDS.map((field) => (
           <div key={field.id} className="space-y-2">
             <label htmlFor={field.id} className={styles.label}>{field.label}</label>
@@ -89,15 +87,6 @@ export const AddProspectForm = ({ execute, result, isExecuting, hasSucceeded, ha
             )}
           </div>
         ))}
-
-        {hasSucceeded && result.data?.message && (
-          <div className="text-green-500 mt-4 text-center">{result.data.message}</div>
-        )}
-        {hasErrored && result?.validationErrors && (
-          <div className="text-red-500 mt-4 text-center">
-            {result.validationErrors._errors?._errors || "Erreur inconnue"}
-          </div>
-        )}
 
         <Button type="submit" disabled={isExecuting}>
           {isExecuting ? 'Ajout en cours...' : 'Ajouter le prospect'}

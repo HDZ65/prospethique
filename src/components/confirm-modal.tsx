@@ -11,41 +11,48 @@ import {
     AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
 
-interface DeleteConfirmModalProps {
+interface ConfirmModalProps {
     isOpen: boolean;
     onClose: () => void;
     onConfirm: () => void;
-    prospectName: string;
+    title: string;
+    description: string;
+    cancelText?: string;
+    confirmText?: string;
+    confirmVariant?: 'default' | 'destructive';
 }
 
-export const DeleteConfirmModal = ({
+export const ConfirmModal = ({
     isOpen,
     onClose,
     onConfirm,
-    prospectName,
-}: DeleteConfirmModalProps) => {
+    title,
+    description,
+    cancelText = "Annuler",
+    confirmText = "Confirmer",
+    confirmVariant = 'default'
+}: ConfirmModalProps) => {
     return (
         <AlertDialog open={isOpen} onOpenChange={onClose}>
             <AlertDialogContent>
                 <AlertDialogHeader>
-                    <AlertDialogTitle>Confirmer la suppression</AlertDialogTitle>
+                    <AlertDialogTitle>{title}</AlertDialogTitle>
                     <AlertDialogDescription>
-                        Êtes-vous sûr de vouloir supprimer le prospect {prospectName} ?
-                        Cette action est irréversible.
+                        {description}
                     </AlertDialogDescription>
                 </AlertDialogHeader>
                 <AlertDialogFooter>
                     <AlertDialogCancel onClick={onClose}>
-                        Annuler
+                        {cancelText}
                     </AlertDialogCancel>
                     <AlertDialogAction
                         onClick={onConfirm}
-                        className="bg-red-500 hover:bg-red-600"
+                        className={confirmVariant === 'destructive' ? "bg-red-500 hover:bg-red-600" : ""}
                     >
-                        Supprimer
+                        {confirmText}
                     </AlertDialogAction>
                 </AlertDialogFooter>
             </AlertDialogContent>
         </AlertDialog>
     );
-}; 
+};

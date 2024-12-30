@@ -1,5 +1,6 @@
-import { Prospect } from "@/libs/schemas/prospect-schema";
+import { Prospect, ProspectWithId, UpdateProspect } from "@/libs/schemas/prospect-schema";
 import { AuthService } from "@services/auth/auth.service";
+import { Timestamp } from "firebase-admin/firestore";
 
 export class ProspectService {
     constructor(
@@ -20,15 +21,14 @@ export class ProspectService {
                 .orderBy('dateCreation', 'desc')
                 .get();
 
-
             return snapshot.docs.map(doc => {
                 const data = doc.data();
                 return {
-                    id: doc.id,
                     ...data,
-                    // Convertir les timestamps Firestore en strings ISO
-                    dateCreation: data.dateCreation?.toDate().toISOString(),
-                    dateRelanceOptimale: data.dateRelanceOptimale?.toDate().toISOString()
+                    id: doc.id,
+                    dateCreation: data.dateCreation.toDate().toISOString(),
+                    dateRelanceOptimale: data.dateRelanceOptimale.toDate().toISOString(),
+                    updatedAt: data.updatedAt?.toDate().toISOString()
                 };
             });
         } catch (error) {
@@ -41,38 +41,47 @@ export class ProspectService {
     */
     async createProspect(prospect: Prospect) {
         const user = await this.authService.checkAuth();
+
         const docRef = await this.db
             .collection('prospects')
             .add({
                 ...prospect,
-                userId: user.id, // Ajoute l'ID de l'utilisateur
+                userId: user.id,
                 createdBy: user.id,
-                dateCreation: new Date()
             });
         return docRef.id;
     }
     /**
     * Met à jour un prospect de l'utilisateur
     */
-    async updateProspect(id: string, data: Partial<Prospect>) {
+    async updateProspect(id: string, data: Partial<UpdateProspect>) {
         const user = await this.authService.checkAuth();
+
         // Vérifie que le prospect appartient à l'utilisateur
         const prospectRef = this.db.collection('prospects').doc(id);
         const prospectDoc = await prospectRef.get();
+
         if (!prospectDoc.exists) {
             throw new Error("Prospect not found");
         }
+
         const prospectData = prospectDoc.data();
         if (prospectData?.userId !== user.id) {
             throw new Error("Unauthorized: This prospect doesn't belong to you");
         }
-        // Met à jour le prospect
-        await prospectRef.update({
+
+        // Convertit la date de relance en Timestamp si elle existe
+        const updateData = {
             ...data,
-            userId: user.id, // Conserve l'ID de l'utilisateur
+            dateRelanceOptimale: data.dateRelanceOptimale
+                ? Timestamp.fromDate(new Date(data.dateRelanceOptimale))
+                : prospectData?.dateRelanceOptimale,
             updatedBy: user.id,
-            updatedAt: new Date()
-        });
+            updatedAt: Timestamp.now()
+        };
+
+        // Met à jour le prospect
+        await prospectRef.update(updateData);
     }
     /**
     * Supprime un prospect de l'utilisateur
@@ -91,5 +100,30 @@ export class ProspectService {
         }
         // Supprime le prospect
         await prospectRef.delete();
+    }
+    /**
+    * Récupère un prospect par son ID
+    */
+    async getProspectById(id: string) {
+        const user = await this.authService.checkAuth();
+        const prospectDoc = await this.db.collection('prospects').doc(id).get();
+
+        if (!prospectDoc.exists) {
+            throw new Error("Prospect not found");
+        }
+
+        const data = prospectDoc.data();
+        if (data?.userId !== user.id) {
+            throw new Error("Unauthorized");
+        }
+
+        // Conversion des timestamps en chaînes ISO
+        return {
+            ...data,
+            id: prospectDoc.id,
+            dateCreation: data?.dateCreation?.toDate().toISOString(),
+            dateRelanceOptimale: data?.dateRelanceOptimale?.toDate().toISOString(),
+            updatedAt: data?.updatedAt?.toDate().toISOString()
+        };
     }
 }

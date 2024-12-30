@@ -4,14 +4,12 @@
  */
 
 export const publicRoutes = [
-    '/',
     '/about',
     '/features',
     '/pricing',
     '/privacy',
     '/terms'
 ];
-
 
 export const authRoutes = [
     '/auth/sign-in',
@@ -23,4 +21,5 @@ export const authRoutes = [
 
 export const apiAuthPrefix = '/api/auth';
 
-export const DEFAULT_LOGIN_REDIRECT = '/dashboard'; 
+export const DEFAULT_LOGIN_REDIRECT = '/dashboard';
+export const DEFAULT_LOGGED_IN_REDIRECT = '/dashboard';

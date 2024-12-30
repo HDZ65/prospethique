@@ -1,11 +1,12 @@
 'use server'
 
 import { db } from '@/libs/firebase/firebase-admin';
-import { schemaProspect, schemaProspectWithId, deleteProspectSchema, ProspectWithId } from '@/libs/schemas/prospect-schema';
+import { schemaProspect, schemaProspectWithId, deleteProspectSchema, ProspectWithId, getProspectByIdSchema, updateProspectSchema } from '@/libs/schemas/prospect-schema';
 import { revalidatePath } from 'next/cache';
 import { ProspectService } from '@services/prospects/prospects.service';
 import { actionClient } from "@/libs/safe-action";
 import { AuthService } from '@services/auth/auth.service';
+import { Timestamp } from 'firebase-admin/firestore';
 
 // Types de retour pour les actions
 export type AddProspectActionResult = {
@@ -17,7 +18,6 @@ export type AddProspectActionResult = {
 
 const authService = new AuthService();
 const prospectService = new ProspectService(db, authService);
-
 
 // GET
 export const getProspects = actionClient
@@ -39,13 +39,29 @@ export const addProspect = actionClient
   .schema(schemaProspect)
   .action(async ({ parsedInput: prospectData }) => {
     try {
-      const id = await prospectService.createProspect(prospectData);
+      // Création des dates
+      const dateCreation = Timestamp.now();
+      const dateRelanceOptimale = new Date();
+      dateRelanceOptimale.setDate(dateCreation.toDate().getDate() + 7);
+
+      // Ajout des dates au prospect
+      const prospectWithDates = {
+        ...prospectData,
+        dateCreation,
+        dateRelanceOptimale: Timestamp.fromDate(dateRelanceOptimale),
+      };
+
+      // Création dans la base de données
+      const id = await prospectService.createProspect(prospectWithDates);
+
       revalidatePath('/prospects');
       return {
         message: 'Prospect ajouté avec succès',
         prospect: {
           ...prospectData,
-          id
+          id,
+          dateCreation: dateCreation.toDate().toISOString(),
+          dateRelanceOptimale: dateRelanceOptimale.toISOString(),
         }
       };
     } catch (error) {
@@ -58,17 +74,22 @@ export const addProspect = actionClient
 
 // UPDATE
 export const updateProspect = actionClient
-  .schema(schemaProspectWithId)
-  .action(async ({ parsedInput: prospectWithId }) => {
+  .schema(updateProspectSchema)
+  .action(async ({ parsedInput: prospectData }) => {
     try {
-      // Mise à jour avec vérification de propriété
       await prospectService.updateProspect(
-        prospectWithId.id,
-        prospectWithId
+        prospectData.id,
+        {
+          ...prospectData,
+          dateRelanceOptimale: prospectData.dateRelanceOptimale,
+        }
       );
+      
+      const updatedProspect = await prospectService.getProspectById(prospectData.id);
       revalidatePath('/prospects');
+      
       return {
-        data: true,
+        data: updatedProspect,
         message: 'Prospect mis à jour avec succès'
       };
     } catch (error) {
@@ -98,3 +119,13 @@ export const deleteProspect = actionClient
       };
     }
   });
+
+// GET BY ID
+export async function getProspect(id: string) {
+  try {
+    return await prospectService.getProspectById(id);
+  } catch (error) {
+    return null;
+  }
+}
+

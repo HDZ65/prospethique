@@ -2,9 +2,8 @@ import Link from 'next/link';
 import { footerConfig } from "@/data/footer";
 import { Separator } from "@components/separator";
 
-export const Footer = () => {
+export const Footer = async () => {
     const currentYear = new Date().getFullYear();
-
     return (
         <footer className="bg-background border-t" role="contentinfo">
             <div className="container py-12">
