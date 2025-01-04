@@ -1,7 +1,7 @@
 'use server'
 
 import { db } from '@/libs/firebase/firebase-admin';
-import { schemaProspect, schemaProspectWithId, deleteProspectSchema, ProspectWithId, getProspectByIdSchema, updateProspectSchema } from '@/libs/schemas/prospect-schema';
+import { schemaProspect, deleteProspectSchema, ProspectWithId, updateProspectSchema } from '@/libs/schemas/prospect-schema';
 import { revalidatePath } from 'next/cache';
 import { ProspectService } from '@services/prospects/prospects.service';
 import { actionClient } from "@/libs/safe-action";
@@ -20,19 +20,17 @@ const authService = new AuthService();
 const prospectService = new ProspectService(db, authService);
 
 // GET
-export const getProspects = actionClient
-  .action(async () => {
-    try {
-      const prospects = await prospectService.getAllProspects();
-      revalidatePath('/prospects');
-      return prospects;
+export const getProspects = async ()  => {
+  try {
+    const prospects = await prospectService.getAllProspects();
+    return prospects;
     } catch (error) {
       return {
         failure: 'Erreur lors de la récupération des prospects',
         error: error instanceof Error ? error.message : 'Erreur inconnue'
       };
-    }
-  });
+  }
+};
 
 // CREATE
 export const addProspect = actionClient
@@ -54,7 +52,7 @@ export const addProspect = actionClient
       // Création dans la base de données
       const id = await prospectService.createProspect(prospectWithDates);
 
-      revalidatePath('/prospects');
+      revalidatePath('/dashboard');
       return {
         message: 'Prospect ajouté avec succès',
         prospect: {
@@ -86,7 +84,7 @@ export const updateProspect = actionClient
       );
       
       const updatedProspect = await prospectService.getProspectById(prospectData.id);
-      revalidatePath('/prospects');
+      revalidatePath('/dashboard');
       
       return {
         data: updatedProspect,
@@ -107,7 +105,7 @@ export const deleteProspect = actionClient
     try {
       // Suppression avec vérification de propriété
       await prospectService.deleteProspect(id);
-      revalidatePath('/prospects');
+      revalidatePath('/dashboard');
       return {
         data: true,
         message: 'Prospect supprimé avec succès'
@@ -121,9 +119,10 @@ export const deleteProspect = actionClient
   });
 
 // GET BY ID
-export async function getProspect(id: string) {
+export const getProspect = async (id: string) => {
   try {
-    return await prospectService.getProspectById(id);
+    const prospect = await prospectService.getProspectById(id);
+    return prospect;
   } catch (error) {
     return null;
   }

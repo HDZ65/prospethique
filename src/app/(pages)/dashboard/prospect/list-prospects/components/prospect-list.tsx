@@ -1,9 +1,12 @@
 'use client';
 
-import { useState } from 'react';
+import { useAction } from "next-safe-action/hooks";
+import { deleteProspect } from "@actions/prospects/prospects.action";
+import { useCallback, useState } from "react";
+import { ProspectWithId } from "@/libs/schemas/prospect-schema";
+import { toast } from "react-hot-toast";
 import { motion } from 'framer-motion';
 import { Users, Mail, Calendar, Search, Pencil, Trash2 } from 'lucide-react';
-import { ProspectWithId } from '@/libs/schemas/prospect-schema';
 import Link from 'next/link';
 import { EmailFormModal } from '@/app/(pages)/dashboard/prospect/_components/email-form-modal';
 import { Input } from "@/components/ui/input";
@@ -21,9 +24,7 @@ import { cn } from "@/libs/utils/core/cn";
 import { ConfirmModal } from '@/components/confirm-modal';
 
 interface ProspectsListProps {
-    prospects: Array<ProspectWithId>;
-    onDelete: (id: string) => void;
-    status: string;
+    initialProspects: ProspectWithId[];
 }
 
 const statusStyles: Record<string, { variant: BadgeProps["variant"], className: string }> = {
@@ -33,12 +34,33 @@ const statusStyles: Record<string, { variant: BadgeProps["variant"], className: 
     'Accepté': { variant: "success", className: "bg-green-500/10 text-green-400" },
 };
 
-export const ProspectsList = ({ prospects, onDelete, status }: ProspectsListProps) => {
+export const ProspectsList = ({ initialProspects }: ProspectsListProps) => {
+    const [prospects, setProspects] = useState<ProspectWithId[]>(initialProspects);
     const [searchTerm, setSearchTerm] = useState('');
     const [isEmailModalOpen, setIsEmailModalOpen] = useState(false);
     const [selectedProspect, setSelectedProspect] = useState<ProspectWithId | null>(null);
     const [isDeleteModalOpen, setIsDeleteModalOpen] = useState(false);
     const [prospectToDelete, setProspectToDelete] = useState<ProspectWithId | null>(null);
+
+
+    const { execute: deleteProspectAction } = useAction(deleteProspect, {
+        onSuccess: () => {
+            toast.success("Prospect supprimé avec succès");
+        },
+        onError: (error) => {
+            toast.error(error.error?.serverError || "Erreur lors de la suppression");
+        }
+    });
+
+    const handleDelete = useCallback((id: string) => {
+        const formData = new FormData();
+        formData.append('id', id);
+        deleteProspectAction(formData);
+        // Mise à jour optimiste
+        setProspects(currentProspects =>
+            currentProspects.filter(prospect => prospect.id !== id)
+        );
+    }, [deleteProspectAction]);
 
     const formatDate = (dateString: string) => {
         return new Date(dateString).toLocaleDateString('fr-FR', {
@@ -60,12 +82,11 @@ export const ProspectsList = ({ prospects, onDelete, status }: ProspectsListProp
 
     const handleConfirmDelete = () => {
         if (prospectToDelete) {
-            onDelete(prospectToDelete.id);
+            handleDelete(prospectToDelete.id);
             setIsDeleteModalOpen(false);
             setProspectToDelete(null);
         }
     };
-
 
     return (
         <>
@@ -104,88 +125,84 @@ export const ProspectsList = ({ prospects, onDelete, status }: ProspectsListProp
                 </CardHeader>
 
                 <CardContent className="p-0">
-                    {status === 'executing' ? (
-                        <div className="h-screen bg-muted/60 animate-pulse" />
-                    ) : (
-                        <div className="divide-y divide-white/10">
-                            {prospects.map((prospect, index) => (
-                                <motion.div
-                                    key={prospect.id}
-                                    initial={{ opacity: 0, y: 10 }}
-                                    animate={{ opacity: 1, y: 0 }}
-                                    transition={{ duration: 0.2, delay: index * 0.05 }}
-                                    className="p-4 hover:bg-muted/60 transition-colors duration-150"
-                                >
-                                    <div className="flex items-center justify-between">
-                                        <div className="flex-1 min-w-0">
-                                            <div className="flex items-center gap-3 mb-2">
-                                                <h3 className="text-text-primary font-medium truncate">
-                                                    {prospect.site}
-                                                </h3>
-                                                <Badge
-                                                    variant={statusStyles[prospect.statut]?.variant || "secondary"}
-                                                    className={cn("font-medium", statusStyles[prospect.statut]?.className || "bg-gray-500/10 text-gray-400")}
-                                                >
-                                                    {prospect.statut}
-                                                </Badge>
-                                            </div>
-                                            <div className="flex items-center gap-4 text-sm text-text-secondary">
-                                                <div className="flex items-center gap-1">
-                                                    <Mail className="w-4 h-4" />
-                                                    <span className="truncate">{prospect.email}</span>
-                                                </div>
-                                                <div className="flex items-center gap-1">
-                                                    <Calendar className="w-4 h-4" />
-                                                    <span>Créé le {formatDate(prospect.dateCreation)}</span>
-                                                </div>
-                                                <div className="flex items-center gap-1">
-                                                    <Calendar className="w-4 h-4 text-primary" />
-                                                    <span>Relance le {formatDate(prospect.dateRelanceOptimale)}</span>
-                                                </div>
-                                            </div>
+                    <div className="divide-y divide-white/10">
+                        {prospects.map((prospect, index) => (
+                            <motion.div
+                                key={prospect.id}
+                                initial={{ opacity: 0, y: 10 }}
+                                animate={{ opacity: 1, y: 0 }}
+                                transition={{ duration: 0.2, delay: index * 0.05 }}
+                                className="p-4 hover:bg-muted/60 transition-colors duration-150"
+                            >
+                                <div className="flex items-center justify-between">
+                                    <div className="flex-1 min-w-0">
+                                        <div className="flex items-center gap-3 mb-2">
+                                            <h3 className="text-text-primary font-medium truncate">
+                                                {prospect.site}
+                                            </h3>
+                                            <Badge
+                                                variant={statusStyles[prospect.statut]?.variant || "secondary"}
+                                                className={cn("font-medium", statusStyles[prospect.statut]?.className || "bg-gray-500/10 text-gray-400")}
+                                            >
+                                                {prospect.statut}
+                                            </Badge>
                                         </div>
-                                        <div className="flex items-center gap-1">
-                                            <Button
-                                                variant="ghost"
-                                                size="sm"
-                                                asChild
-                                                className="text-text-secondary hover:text-text-primary"
-                                            >
-                                                <Link href={`/dashboard/prospect/update-prospect/${prospect.id}`}>
-                                                    <Pencil className="w-4 h-4 mr-2" />
-                                                    <span className="hidden sm:inline">Modifier</span>
-                                                </Link>
-                                            </Button>
-                                            <Button
-                                                variant="ghost"
-                                                size="sm"
-                                                onClick={() => handleOpenEmailModal(prospect)}
-                                                className="text-text-secondary hover:text-text-primary"
-                                            >
-                                                <Mail className="w-4 h-4 mr-2" />
-                                                <span className="hidden sm:inline">Email</span>
-                                            </Button>
-                                            <Button
-                                                variant="ghost"
-                                                size="sm"
-                                                onClick={() => handleDeleteClick(prospect)}
-                                                className="text-text-secondary hover:text-red-400"
-                                            >
-                                                <Trash2 className="w-4 h-4 mr-2" />
-                                                <span className="hidden sm:inline">Supprimer</span>
-                                            </Button>
+                                        <div className="flex items-center gap-4 text-sm text-text-secondary">
+                                            <div className="flex items-center gap-1">
+                                                <Mail className="w-4 h-4" />
+                                                <span className="truncate">{prospect.email}</span>
+                                            </div>
+                                            <div className="flex items-center gap-1">
+                                                <Calendar className="w-4 h-4" />
+                                                <span>Créé le {formatDate(prospect.dateCreation)}</span>
+                                            </div>
+                                            <div className="flex items-center gap-1">
+                                                <Calendar className="w-4 h-4 text-primary" />
+                                                <span>Relance le {formatDate(prospect.dateRelanceOptimale)}</span>
+                                            </div>
                                         </div>
                                     </div>
-                                </motion.div>
-                            ))}
-
-                            {prospects.length === 0 && (
-                                <div className="p-8 text-center text-text-secondary">
-                                    Aucun prospect trouvé
+                                    <div className="flex items-center gap-1">
+                                        <Button
+                                            variant="ghost"
+                                            size="sm"
+                                            asChild
+                                            className="text-text-secondary hover:text-text-primary"
+                                        >
+                                            <Link href={`/dashboard/prospect/update-prospect/${prospect.id}`}>
+                                                <Pencil className="w-4 h-4 mr-2" />
+                                                <span className="hidden sm:inline">Modifier</span>
+                                            </Link>
+                                        </Button>
+                                        <Button
+                                            variant="ghost"
+                                            size="sm"
+                                            onClick={() => handleOpenEmailModal(prospect)}
+                                            className="text-text-secondary hover:text-text-primary"
+                                        >
+                                            <Mail className="w-4 h-4 mr-2" />
+                                            <span className="hidden sm:inline">Email</span>
+                                        </Button>
+                                        <Button
+                                            variant="ghost"
+                                            size="sm"
+                                            onClick={() => handleDeleteClick(prospect)}
+                                            className="text-text-secondary hover:text-red-400"
+                                        >
+                                            <Trash2 className="w-4 h-4 mr-2" />
+                                            <span className="hidden sm:inline">Supprimer</span>
+                                        </Button>
+                                    </div>
                                 </div>
-                            )}
-                        </div>
-                    )}
+                            </motion.div>
+                        ))}
+
+                        {prospects.length === 0 && (
+                            <div className="p-8 text-center text-text-secondary">
+                                Aucun prospect trouvé
+                            </div>
+                        )}
+                    </div>
                 </CardContent>
             </Card>
 
