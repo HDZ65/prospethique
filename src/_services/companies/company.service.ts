@@ -1,5 +1,7 @@
-import { Company } from "@/libs/schemas/companies/company.schema";
+import { Company } from "@/lib/schemas/companies/company.schema";
 import { AuthService } from "@/app/_services/auth/auth.service";
+import { Timestamp } from "firebase-admin/firestore";
+
 export class CompanyService {
     constructor(
         private readonly db: FirebaseFirestore.Firestore,
@@ -8,23 +10,19 @@ export class CompanyService {
         if (!db) throw new Error("Database connection required");
     }
 
-    /**
-    * Crée une nouvelle entreprise
-    */
     async createCompany(company: Company) {
         const user = await this.authService.checkAuth();
         const companyData = {
             ...company,
             members: [user.id],
             createdBy: user.id,
-            createdAt: new Date(),
-            updatedAt: new Date()
+            createdAt: Timestamp.now(),
+            updatedAt: Timestamp.now()
         };
         const docRef = await this.db
             .collection('companies')
             .add(companyData);
 
-        // Mise à jour de l'utilisateur avec l'ID de l'entreprise
         await this.db
             .collection('users')
             .doc(user.id)
@@ -33,5 +31,35 @@ export class CompanyService {
                 role: 'ADMIN'
             });
         return docRef.id;
+    }
+
+    async getCompany() {
+        const user = await this.authService.checkAuth();
+        
+        // Récupérer l'ID de l'entreprise de l'utilisateur
+        const userDoc = await this.db
+            .collection('users')
+            .doc(user.id)
+            .get();
+        
+        const userData = userDoc.data();
+        if (!userData?.companyId) {
+            throw new Error("Aucune entreprise associée");
+        }
+
+        // Récupérer les données de l'entreprise
+        const companyDoc = await this.db
+            .collection('companies')
+            .doc(userData.companyId)
+            .get();
+
+        if (!companyDoc.exists) {
+            throw new Error("Entreprise non trouvée");
+        }
+
+        return {
+            id: companyDoc.id,
+            ...companyDoc.data()
+        };
     }
 }

@@ -2,8 +2,8 @@
 
 import { useAction } from "next-safe-action/hooks";
 import { deleteProspect } from "@actions/prospects/prospects.action";
-import { useCallback, useState } from "react";
-import { ProspectWithId } from "@/libs/schemas/prospect-schema";
+import { useCallback, useState, Suspense } from "react";
+import { ProspectWithId } from "@/lib/schemas/prospect-schema";
 import { toast } from "react-hot-toast";
 import { motion } from 'framer-motion';
 import { Users, Mail, Calendar, Search, Pencil, Trash2 } from 'lucide-react';
@@ -11,36 +11,46 @@ import Link from 'next/link';
 import { EmailFormModal } from '@/app/(pages)/dashboard/prospect/_components/email-form-modal';
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
-import {
-    Card,
-    CardContent,
-    CardHeader,
-} from "@/components/ui/card";
-import {
-    Badge,
-    BadgeProps,
-} from "@/components/ui/badge";
-import { cn } from "@/libs/utils/core/cn";
+import { Card, CardContent, CardHeader } from "@/components/ui/card";
+import { Badge, BadgeProps } from "@/components/ui/badge";
+import { cn } from "@/lib/utils/core/cn";
 import { ConfirmModal } from '@/components/confirm-modal';
+import { useRouter } from 'next/navigation';
+import { Checkbox } from "@/components/ui/checkbox";
 
 interface ProspectsListProps {
     initialProspects: ProspectWithId[];
 }
 
 const statusStyles: Record<string, { variant: BadgeProps["variant"], className: string }> = {
-    'Email envoyé': { variant: "secondary", className: "bg-blue-500/10 text-blue-400" },
     'À contacter': { variant: "warning", className: "bg-yellow-500/10 text-yellow-400" },
-    'Refusé': { variant: "destructive", className: "bg-red-500/10 text-red-400" },
-    'Accepté': { variant: "success", className: "bg-green-500/10 text-green-400" },
+};
+
+const EditButton = ({ prospectId }: { prospectId: string }) => {
+    return (
+        <Button
+            variant="ghost"
+            size="sm"
+            asChild
+            className="text-text-secondary hover:text-text-primary"
+        >
+            <Link href={`/dashboard/prospect/update-prospect/${prospectId}`}>
+                <Pencil className="w-4 h-4" />
+                <span className="hidden sm:inline">Modifier</span>
+            </Link>
+        </Button>
+    );
 };
 
 export const ProspectsList = ({ initialProspects }: ProspectsListProps) => {
+    const router = useRouter();
     const [prospects, setProspects] = useState<ProspectWithId[]>(initialProspects);
     const [searchTerm, setSearchTerm] = useState('');
     const [isEmailModalOpen, setIsEmailModalOpen] = useState(false);
     const [selectedProspect, setSelectedProspect] = useState<ProspectWithId | null>(null);
     const [isDeleteModalOpen, setIsDeleteModalOpen] = useState(false);
     const [prospectToDelete, setProspectToDelete] = useState<ProspectWithId | null>(null);
+    const [deleteWithEmails, setDeleteWithEmails] = useState(false);
 
 
     const { execute: deleteProspectAction } = useAction(deleteProspect, {
@@ -48,13 +58,17 @@ export const ProspectsList = ({ initialProspects }: ProspectsListProps) => {
             toast.success("Prospect supprimé avec succès");
         },
         onError: (error) => {
+            console.log('error', error);
             toast.error(error.error?.serverError || "Erreur lors de la suppression");
         }
     });
 
-    const handleDelete = useCallback((id: string) => {
+    const handleDelete = useCallback((id: string, deleteWithEmails: boolean) => {
         const formData = new FormData();
         formData.append('id', id);
+        if (deleteWithEmails) {
+            formData.append('deleteEmails', 'on');
+        }
         deleteProspectAction(formData);
         // Mise à jour optimiste
         setProspects(currentProspects =>
@@ -70,23 +84,23 @@ export const ProspectsList = ({ initialProspects }: ProspectsListProps) => {
         });
     };
 
-    const handleOpenEmailModal = (prospect: ProspectWithId) => {
-        setSelectedProspect(prospect);
-        setIsEmailModalOpen(true);
-    };
-
     const handleDeleteClick = (prospect: ProspectWithId) => {
         setProspectToDelete(prospect);
         setIsDeleteModalOpen(true);
     };
 
-    const handleConfirmDelete = () => {
+    const handleConfirmDelete = (deleteWithEmails: boolean) => {
         if (prospectToDelete) {
-            handleDelete(prospectToDelete.id);
+            handleDelete(prospectToDelete.id, deleteWithEmails);
             setIsDeleteModalOpen(false);
             setProspectToDelete(null);
         }
     };
+
+    const handleEmailClick = (prospect: ProspectWithId) => {
+        router.push(`/dashboard/prospect/send-email/${prospect.id}`);
+    };
+
 
     return (
         <>
@@ -101,9 +115,9 @@ export const ProspectsList = ({ initialProspects }: ProspectsListProps) => {
                             >
                                 <Users className="w-5 h-5 text-primary" />
                             </motion.div>
-                            <h2 className="text-xl font-medium text-text-primary">
+                            <h1 className="text-2xl font-medium text-text-primary">
                                 Liste des prospects
-                            </h2>
+                            </h1>
                         </div>
                         <Button asChild>
                             <Link href="/dashboard/prospect/add-prospect">
@@ -140,12 +154,14 @@ export const ProspectsList = ({ initialProspects }: ProspectsListProps) => {
                                             <h3 className="text-text-primary font-medium truncate">
                                                 {prospect.site}
                                             </h3>
-                                            <Badge
-                                                variant={statusStyles[prospect.statut]?.variant || "secondary"}
-                                                className={cn("font-medium", statusStyles[prospect.statut]?.className || "bg-gray-500/10 text-gray-400")}
-                                            >
-                                                {prospect.statut}
-                                            </Badge>
+                                            {prospect.statut === 'À contacter' && (
+                                                <Badge
+                                                    variant={statusStyles[prospect.statut]?.variant || "secondary"}
+                                                    className={cn("font-medium", statusStyles[prospect.statut]?.className)}
+                                                >
+                                                    {prospect.statut}
+                                                </Badge>
+                                            )}
                                         </div>
                                         <div className="flex items-center gap-4 text-sm text-text-secondary">
                                             <div className="flex items-center gap-1">
@@ -156,31 +172,32 @@ export const ProspectsList = ({ initialProspects }: ProspectsListProps) => {
                                                 <Calendar className="w-4 h-4" />
                                                 <span>Créé le {formatDate(prospect.dateCreation)}</span>
                                             </div>
-                                            <div className="flex items-center gap-1">
-                                                <Calendar className="w-4 h-4 text-primary" />
-                                                <span>Relance le {formatDate(prospect.dateRelanceOptimale)}</span>
-                                            </div>
+                                            {prospect.dateRelanceOptimale && (
+                                                <div className="flex items-center gap-1">
+                                                    <Calendar className="w-4 h-4 text-primary" />
+                                                    <span>Relance le {formatDate(prospect.dateRelanceOptimale)}</span>
+                                                </div>
+                                            )}
                                         </div>
                                     </div>
                                     <div className="flex items-center gap-1">
+                                        <Suspense
+                                            fallback={
+                                                <Button variant="ghost" size="sm" disabled>
+                                                    <span className="animate-spin">⏳</span>
+                                                    Chargement...
+                                                </Button>
+                                            }
+                                        >
+                                            <EditButton prospectId={prospect.id} />
+                                        </Suspense>
                                         <Button
                                             variant="ghost"
                                             size="sm"
-                                            asChild
+                                            onClick={() => handleEmailClick(prospect)}
                                             className="text-text-secondary hover:text-text-primary"
                                         >
-                                            <Link href={`/dashboard/prospect/update-prospect/${prospect.id}`}>
-                                                <Pencil className="w-4 h-4 mr-2" />
-                                                <span className="hidden sm:inline">Modifier</span>
-                                            </Link>
-                                        </Button>
-                                        <Button
-                                            variant="ghost"
-                                            size="sm"
-                                            onClick={() => handleOpenEmailModal(prospect)}
-                                            className="text-text-secondary hover:text-text-primary"
-                                        >
-                                            <Mail className="w-4 h-4 mr-2" />
+                                            <Mail className="w-4 h-4" />
                                             <span className="hidden sm:inline">Email</span>
                                         </Button>
                                         <Button
@@ -189,7 +206,7 @@ export const ProspectsList = ({ initialProspects }: ProspectsListProps) => {
                                             onClick={() => handleDeleteClick(prospect)}
                                             className="text-text-secondary hover:text-red-400"
                                         >
-                                            <Trash2 className="w-4 h-4 mr-2" />
+                                            <Trash2 className="w-4 h-4" />
                                             <span className="hidden sm:inline">Supprimer</span>
                                         </Button>
                                     </div>
@@ -218,12 +235,24 @@ export const ProspectsList = ({ initialProspects }: ProspectsListProps) => {
             <ConfirmModal
                 isOpen={isDeleteModalOpen}
                 onClose={() => setIsDeleteModalOpen(false)}
-                onConfirm={handleConfirmDelete}
+                onConfirm={() => handleConfirmDelete(deleteWithEmails)}
                 title="Confirmer la suppression"
                 description={`Êtes-vous sûr de vouloir supprimer le prospect ${prospectToDelete?.site || ''} ? Cette action est irréversible.`}
                 confirmText="Supprimer"
                 confirmVariant="destructive"
-            />
+                className="bg-background"
+            >
+                <div className="flex items-center space-x-2 mt-4">
+                    <Checkbox
+                        id="deleteEmails"
+                        checked={deleteWithEmails}
+                        onCheckedChange={(checked: boolean) => setDeleteWithEmails(checked)}
+                    />
+                    <label htmlFor="deleteEmails">
+                        Supprimer également les emails envoyés
+                    </label>
+                </div>
+            </ConfirmModal>
         </>
     );
 };

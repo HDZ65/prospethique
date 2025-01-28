@@ -1,8 +1,8 @@
 import { ProspectsList } from "@dashboard/prospect/list-prospects/components/prospect-list";
 import { getProspects } from "@actions/prospects/prospects.action";
 import { Suspense } from "react";
-import { ProspectWithId } from "@/libs/schemas/prospect-schema";
-// import { ProspectsListSkeleton } from "./components/prospects-list-skeleton"; // À créer
+import { ProspectWithId } from "@/lib/schemas/prospect-schema";
+import { Progress } from "@/components/ui/progress"
 
 export const dynamic = 'force-dynamic';
 export const revalidate = 0;
@@ -17,7 +17,7 @@ async function ProspectsListServer() {
 
 export default function DashboardPage() {
     return (
-        <Suspense fallback={<div>Chargement des prospects...</div>}>
+        <Suspense fallback={<Progress value={73} />}>
             <ProspectsListServer />
         </Suspense>
     );

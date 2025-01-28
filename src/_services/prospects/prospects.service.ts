@@ -1,6 +1,6 @@
-import { Prospect, ProspectWithId, UpdateProspect } from "@/libs/schemas/prospect-schema";
+import { Prospect, UpdateProspect } from "@/lib/schemas/prospect-schema";
+import { formatFirebaseDates } from "@/lib/utils/date";
 import { AuthService } from "@services/auth/auth.service";
-import { Timestamp } from "firebase-admin/firestore";
 
 export class ProspectService {
     constructor(
@@ -23,13 +23,10 @@ export class ProspectService {
 
             return snapshot.docs.map(doc => {
                 const data = doc.data();
-                return {
+                return formatFirebaseDates({
                     ...data,
                     id: doc.id,
-                    dateCreation: data.dateCreation.toDate().toISOString(),
-                    dateRelanceOptimale: data.dateRelanceOptimale.toDate().toISOString(),
-                    updatedAt: data.updatedAt?.toDate().toISOString()
-                };
+                });
             });
         } catch (error) {
             console.error('Erreur dans getAllProspects:', error);
@@ -54,11 +51,10 @@ export class ProspectService {
     /**
     * Met à jour un prospect de l'utilisateur
     */
-    async updateProspect(id: string, data: Partial<UpdateProspect>) {
+    async updateProspect(data: UpdateProspect) {
         const user = await this.authService.checkAuth();
-
         // Vérifie que le prospect appartient à l'utilisateur
-        const prospectRef = this.db.collection('prospects').doc(id);
+        const prospectRef = this.db.collection('prospects').doc(data.id);
         const prospectDoc = await prospectRef.get();
 
         if (!prospectDoc.exists) {
@@ -70,35 +66,40 @@ export class ProspectService {
             throw new Error("Unauthorized: This prospect doesn't belong to you");
         }
 
-        // Convertit la date de relance en Timestamp si elle existe
-        const updateData = {
-            ...data,
-            dateRelanceOptimale: data.dateRelanceOptimale
-                ? Timestamp.fromDate(new Date(data.dateRelanceOptimale))
-                : prospectData?.dateRelanceOptimale,
-            updatedBy: user.id,
-            updatedAt: Timestamp.now()
-        };
-
         // Met à jour le prospect
-        await prospectRef.update(updateData);
+        await prospectRef.update({
+            ...data,
+            updatedBy: user.id,
+        });
     }
     /**
     * Supprime un prospect de l'utilisateur
     */
-    async deleteProspect(id: string) {
+    async deleteProspect(id: string, deleteEmails: boolean) {
         const user = await this.authService.checkAuth();
-        // Vérifie que le prospect appartient à l'utilisateur
         const prospectRef = this.db.collection('prospects').doc(id);
         const prospectDoc = await prospectRef.get();
+
         if (!prospectDoc.exists) {
             throw new Error("Prospect not found");
         }
+
         const prospectData = prospectDoc.data();
         if (prospectData?.userId !== user.id) {
             throw new Error("Unauthorized: This prospect doesn't belong to you");
         }
-        // Supprime le prospect
+
+        if (deleteEmails) {
+            const emailsSnapshot = await this.db
+                .collection('emails')
+                .where('prospectId', '==', id)
+                .get();
+
+            const batch = this.db.batch();
+            emailsSnapshot.docs.forEach(doc => batch.delete(doc.ref));
+            await batch.commit();
+        }
+
         await prospectRef.delete();
     }
     /**
@@ -107,7 +108,6 @@ export class ProspectService {
     async getProspectById(id: string) {
         const user = await this.authService.checkAuth();
         const prospectDoc = await this.db.collection('prospects').doc(id).get();
-
         if (!prospectDoc.exists) {
             throw new Error("Prospect not found");
         }
@@ -117,13 +117,10 @@ export class ProspectService {
             throw new Error("Unauthorized");
         }
 
-        // Conversion des timestamps en chaînes ISO
         return {
             ...data,
             id: prospectDoc.id,
-            dateCreation: data?.dateCreation?.toDate().toISOString(),
-            dateRelanceOptimale: data?.dateRelanceOptimale?.toDate().toISOString(),
-            updatedAt: data?.updatedAt?.toDate().toISOString()
         };
     }
+
 }

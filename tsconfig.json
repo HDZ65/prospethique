@@ -30,16 +30,16 @@
         "./src/components/ui/*"
       ],
       "@firebase/*": [
-        "./src/libs/firebase/*"
+        "./src/lib/firebase/*"
       ],
       "@auth/*": [
-        "./src/libs/auth/*"
+        "./src/lib/auth/*"
       ],
       "@config/*": [
-        "./src/libs/config/*"
+        "./src/lib/config/*"
       ],
       "@safe-action": [
-        "./src/libs/safe-action.ts"
+        "./src/lib/safe-action.ts"
       ],
       "@actions/*": [
         "./src/_actions/*"

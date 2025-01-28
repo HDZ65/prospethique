@@ -1,7 +1,7 @@
 'use client';
 
 import { useState } from 'react';
-import { ProspectWithId } from '@/libs/schemas/prospect-schema';
+import { ProspectWithId } from '@/lib/schemas/prospect-schema';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import * as z from 'zod';

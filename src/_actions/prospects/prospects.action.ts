@@ -1,12 +1,13 @@
 'use server'
 
-import { db } from '@/libs/firebase/firebase-admin';
-import { schemaProspect, deleteProspectSchema, ProspectWithId, updateProspectSchema } from '@/libs/schemas/prospect-schema';
+import { db } from '@/lib/firebase/firebase-admin';
+import { schemaProspect, deleteProspectSchema, ProspectWithId, updateProspectSchema } from '@/lib/schemas/prospect-schema';
 import { revalidatePath } from 'next/cache';
 import { ProspectService } from '@services/prospects/prospects.service';
-import { actionClient } from "@/libs/safe-action";
+import { actionClient } from "@/lib/safe-action";
 import { AuthService } from '@services/auth/auth.service';
 import { Timestamp } from 'firebase-admin/firestore';
+import { formatFirebaseDate, formatFirebaseDates, toFirebaseTimestamps } from '@/lib/utils/date';
 
 // Types de retour pour les actions
 export type AddProspectActionResult = {
@@ -20,15 +21,15 @@ const authService = new AuthService();
 const prospectService = new ProspectService(db, authService);
 
 // GET
-export const getProspects = async ()  => {
+export const getProspects = async () => {
   try {
     const prospects = await prospectService.getAllProspects();
     return prospects;
-    } catch (error) {
-      return {
-        failure: 'Erreur lors de la récupération des prospects',
-        error: error instanceof Error ? error.message : 'Erreur inconnue'
-      };
+  } catch (error) {
+    return {
+      failure: 'Erreur lors de la récupération des prospects',
+      error: error instanceof Error ? error.message : 'Erreur inconnue'
+    };
   }
 };
 
@@ -37,16 +38,9 @@ export const addProspect = actionClient
   .schema(schemaProspect)
   .action(async ({ parsedInput: prospectData }) => {
     try {
-      // Création des dates
-      const dateCreation = Timestamp.now();
-      const dateRelanceOptimale = new Date();
-      dateRelanceOptimale.setDate(dateCreation.toDate().getDate() + 7);
-
-      // Ajout des dates au prospect
       const prospectWithDates = {
         ...prospectData,
-        dateCreation,
-        dateRelanceOptimale: Timestamp.fromDate(dateRelanceOptimale),
+        dateCreation: Timestamp.now(),
       };
 
       // Création dans la base de données
@@ -58,8 +52,7 @@ export const addProspect = actionClient
         prospect: {
           ...prospectData,
           id,
-          dateCreation: dateCreation.toDate().toISOString(),
-          dateRelanceOptimale: dateRelanceOptimale.toISOString(),
+          dateCreation: formatFirebaseDate(Timestamp.now()),
         }
       };
     } catch (error) {
@@ -75,19 +68,17 @@ export const updateProspect = actionClient
   .schema(updateProspectSchema)
   .action(async ({ parsedInput: prospectData }) => {
     try {
-      await prospectService.updateProspect(
-        prospectData.id,
-        {
-          ...prospectData,
-          dateRelanceOptimale: prospectData.dateRelanceOptimale,
-        }
-      );
-      
+      const updateData = toFirebaseTimestamps({
+        ...prospectData,
+        updatedAt: new Date().toISOString()
+      });
+
+      await prospectService.updateProspect(updateData);
       const updatedProspect = await prospectService.getProspectById(prospectData.id);
+
       revalidatePath('/dashboard');
-      
       return {
-        data: updatedProspect,
+        data: formatFirebaseDates(updatedProspect),
         message: 'Prospect mis à jour avec succès'
       };
     } catch (error) {
@@ -101,10 +92,9 @@ export const updateProspect = actionClient
 // DELETE
 export const deleteProspect = actionClient
   .schema(deleteProspectSchema)
-  .action(async ({ parsedInput: { id } }) => {
+  .action(async ({ parsedInput: { id, deleteEmails } }) => {
     try {
-      // Suppression avec vérification de propriété
-      await prospectService.deleteProspect(id);
+      await prospectService.deleteProspect(id, deleteEmails);
       revalidatePath('/dashboard');
       return {
         data: true,
@@ -119,12 +109,13 @@ export const deleteProspect = actionClient
   });
 
 // GET BY ID
-export const getProspect = async (id: string) => {
+export const getProspectById = async (id: string) => {
   try {
     const prospect = await prospectService.getProspectById(id);
-    return prospect;
+    return prospect ? formatFirebaseDates(prospect) : null;
   } catch (error) {
     return null;
   }
 }
+
 

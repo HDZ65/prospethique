@@ -1,6 +1,6 @@
-"use client"
-
+'use client'
 import { ChevronRight, type LucideIcon } from "lucide-react"
+import { Badge } from "@/components/ui/badge";
 
 import {
   Collapsible,
@@ -20,6 +20,7 @@ import {
 
 export function NavMain({
   items,
+  count,
 }: {
   items: {
     title: string
@@ -31,6 +32,7 @@ export function NavMain({
       url: string
     }[]
   }[]
+  count?: number
 }) {
   return (
     <SidebarGroup>
@@ -48,6 +50,13 @@ export function NavMain({
                 <SidebarMenuButton tooltip={item.title}>
                   {item.icon && <item.icon />}
                   <span>{item.title}</span>
+                  {item.url === '/dashboard/prospect/follow-up' && count !== undefined && (
+                    <Badge
+                      className="ml-2 bg-primary/20 text-red-400 hover:bg-primary/30"
+                    >
+                      {count}
+                    </Badge>
+                  )}
                   <ChevronRight className="ml-auto transition-transform duration-200 group-data-[state=open]/collapsible:rotate-90" />
                 </SidebarMenuButton>
               </CollapsibleTrigger>
@@ -58,6 +67,13 @@ export function NavMain({
                       <SidebarMenuSubButton asChild>
                         <a href={subItem.url}>
                           <span>{subItem.title}</span>
+                          {subItem.url === '/dashboard/prospect/follow-up' && count !== undefined && (
+                            <Badge
+                              className="ml-2 bg-primary/20 text-red-400 hover:bg-primary/30"
+                            >
+                              {count}
+                            </Badge>
+                          )}
                         </a>
                       </SidebarMenuSubButton>
                     </SidebarMenuSubItem>

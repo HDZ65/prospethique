@@ -1,7 +1,7 @@
 "use client"
 import { signIn } from "next-auth/react"
 import { Button } from "@/components/ui/button"
-import { DEFAULT_LOGIN_REDIRECT } from "@/libs/configs/routes"
+import { DEFAULT_LOGIN_REDIRECT } from "@/lib/configs/routes"
 import { Linkedin } from "lucide-react"
 
 export default function LinkedInButton(props: React.ComponentPropsWithRef<typeof Button> & { text?: string }) {

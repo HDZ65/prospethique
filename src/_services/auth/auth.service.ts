@@ -1,4 +1,4 @@
-import { auth } from "@/libs/auth/next-auth";
+import { auth } from "@/lib/auth/next-auth";
 
 export class AuthService {
     constructor(

@@ -1,5 +1,5 @@
 import { LoginButton } from "@/components/auth-buttons/linkedin";
-import { auth } from "@/libs/auth/next-auth";
+import { auth } from "@/lib/auth/next-auth";
 import { redirect } from "next/navigation";
 
 export default async function SignInPage() {

@@ -1,12 +1,13 @@
-import { authConfig } from "@/libs/auth/auth.config";
+import { authConfig } from "@/lib/auth/auth.config";
 import NextAuth from "next-auth";
 import { 
     publicRoutes, 
     authRoutes, 
-    apiAuthPrefix, 
+    apiAuthPrefix,
+    apiRoutes,
     DEFAULT_LOGIN_REDIRECT,
     DEFAULT_LOGGED_IN_REDIRECT 
-} from "@/libs/configs/routes";
+} from "@/lib/configs/routes";
 import { NextResponse } from "next/server";
 
 const { auth } = NextAuth(authConfig)
@@ -18,10 +19,14 @@ export default auth((req) => {
     const isPublicRoute = publicRoutes.includes(nextUrl.pathname);
     const isAuthRoute = authRoutes.includes(nextUrl.pathname);
     const isApiAuthRoute = nextUrl.pathname.startsWith(apiAuthPrefix);
+    const isApiRoute = apiRoutes.some(route => {
+        const pattern = route.replace(/:id/, '[^/]+');
+        return new RegExp(`^${pattern}$`).test(nextUrl.pathname);
+    });
     const isRootPage = nextUrl.pathname === '/';
 
-    // Ne rien faire pour les routes d'API auth
-    if (isApiAuthRoute) {
+    // Ne rien faire pour les routes d'API
+    if (isApiAuthRoute || isApiRoute) {
         return NextResponse.next();
     }
 

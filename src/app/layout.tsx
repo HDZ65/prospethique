@@ -5,7 +5,7 @@ import { Toaster } from 'react-hot-toast';
 import { Header } from '@/components/layout/header';
 import { Footer } from '@/components/layout/footer';
 import { ThemeProvider } from "@/components/providers/theme-provider";
-import { auth } from "@/libs/auth/next-auth";
+import { auth } from "@/lib/auth/next-auth";
 
 const geistSans = Geist({
   variable: "--font-geist-sans",

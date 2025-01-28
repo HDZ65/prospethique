@@ -1,5 +1,5 @@
 import LinkedInButton from "@/components/auth-buttons/linkedin";
-import { auth } from "@/libs/auth/next-auth";
+import { auth } from "@/lib/auth/next-auth";
 import { redirect } from "next/navigation";
 import { Card, CardHeader, CardContent, CardFooter } from "@/components/ui/card";
 import { Linkedin } from "lucide-react";

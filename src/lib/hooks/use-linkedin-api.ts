@@ -1,8 +1,8 @@
 'use client';
 
-import { axiosInstance } from '@/libs/configs/axios.config';
+import { axiosInstance } from '@/lib/configs/axios.config';
 import { useState } from 'react';
-import useCurrentUser from '@/libs/hooks/use-current-user';
+import useCurrentUser from '@/lib/hooks/use-current-user';
 
 
 export const useLinkedInApi = () => {

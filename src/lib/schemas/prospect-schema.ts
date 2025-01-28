@@ -1,8 +1,9 @@
 import { z } from 'zod';
 import { zfd } from 'zod-form-data';
+import { CompleteSendEmail } from './email-template-schema';
 
 // Énumérations des statuts
-export const STATUTS = ['À contacter', 'Email envoyé', 'Refusé', 'Accepté'] as const;
+export const STATUTS = ['À contacter', 'E-mail envoyé', 'E-mail délivré', 'E-mail délivré avec retard', 'E-mail signalé comme spam', 'E-mail rejeté'] as const;
 
 // Schéma de base (sans ID pour la création)
 export const schemaProspect = zfd.formData({
@@ -55,15 +56,18 @@ export const schemaProspectWithId = zfd.formData({
 export const updateProspectSchema = zfd.formData({
   ...schemaProspectWithId._def.schema.shape,
   dateRelanceOptimale: zfd.text(
-    z.string({
-      required_error: "La date de relance est requise",
-    }).datetime("La date de relance n'est pas valide")
+    z.string()
+      .date()
+      .optional()
+      .nullable()
+      .transform(val => val || '')
   ),
 });
 
 // Schéma pour la suppression
 export const deleteProspectSchema = zfd.formData({
-  id: zfd.text(z.string().min(1, "L'ID est requis"))
+  id: zfd.text(z.string().min(1, "L'ID est requis")),
+  deleteEmails: zfd.checkbox()
 });
 
 // Schéma pour la récupération par ID
@@ -78,6 +82,8 @@ export type ProspectWithId = z.infer<typeof schemaProspectWithId> & {
   dateCreation: string;
   dateRelanceOptimale: string;
   updatedAt?: string;
+  lastEmailSentAt?: string;
+  lastEmail?: CompleteSendEmail;
 };
 export type DeleteProspect = z.infer<typeof deleteProspectSchema>;
 export type AddProspect = z.infer<typeof schemaProspect> & { id: string, prospect: ProspectWithId };

@@ -13,7 +13,7 @@ import { Form } from '@/components/ui/form';
 import { Button } from '@/components/ui/button';
 import { Card, CardHeader, CardContent } from '@/components/ui/card';
 import { Alert, AlertDescription } from '@/components/ui/alert';
-import { GenerateLinkedinPostSchema } from '@/libs/schemas/linkedin.schema';
+import { GenerateLinkedinPostSchema } from '@/lib/schemas/linkedin.schema';
 import { z } from 'zod';
 
 type FormData = z.infer<typeof GenerateLinkedinPostSchema>;
@@ -56,7 +56,7 @@ export const PostLinkedinForm = () => {
                     <div className="p-2 rounded-lg bg-primary/10">
                         <FileText className="w-5 h-5 text-primary" aria-hidden="true" />
                     </div>
-                    <h1 className="text-xl font-medium text-text-primary">
+                    <h1 className="text-2xl font-medium text-text-primary">
                         Nouveau post LinkedIn
                     </h1>
                 </div>

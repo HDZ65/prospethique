@@ -1,7 +1,7 @@
 'use server';
 
-import { actionClient } from "@/libs/safe-action";
-import { GenerateLinkedinPostSchema } from "@/libs/schemas/linkedin.schema";
+import { actionClient } from "@/lib/safe-action";
+import { GenerateLinkedinPostSchema } from "@/lib/schemas/linkedin.schema";
 import Anthropic from "@anthropic-ai/sdk";
 
 const anthropic = new Anthropic({

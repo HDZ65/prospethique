@@ -1,6 +1,6 @@
 import { ProfileImage } from '@dashboard/linkedin/components/preview/profile-image';
 import { Button } from "@/components/ui/button";
-import { auth } from '@/libs/auth/next-auth';
+import { auth } from '@/lib/auth/next-auth';
 import { Separator } from "@/components/ui/separator";
 
 export const PostHeader = async () => {

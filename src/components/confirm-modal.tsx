@@ -10,6 +10,7 @@ import {
     AlertDialogHeader,
     AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
+import { cn } from "@/lib/utils/core/cn";
 
 interface ConfirmModalProps {
     isOpen: boolean;
@@ -20,6 +21,8 @@ interface ConfirmModalProps {
     cancelText?: string;
     confirmText?: string;
     confirmVariant?: 'default' | 'destructive';
+    children?: React.ReactNode;
+    className?: string;
 }
 
 export const ConfirmModal = ({
@@ -30,24 +33,36 @@ export const ConfirmModal = ({
     description,
     cancelText = "Annuler",
     confirmText = "Confirmer",
-    confirmVariant = 'default'
+    confirmVariant = 'default',
+    children,
 }: ConfirmModalProps) => {
     return (
         <AlertDialog open={isOpen} onOpenChange={onClose}>
-            <AlertDialogContent>
+            <AlertDialogContent className="border-white/10">
                 <AlertDialogHeader>
-                    <AlertDialogTitle>{title}</AlertDialogTitle>
-                    <AlertDialogDescription>
+                    <AlertDialogTitle className="text-xl font-semibold text-text-primary">
+                        {title}
+                    </AlertDialogTitle>
+                    <AlertDialogDescription className="text-text-secondary">
                         {description}
                     </AlertDialogDescription>
                 </AlertDialogHeader>
-                <AlertDialogFooter>
-                    <AlertDialogCancel onClick={onClose}>
+                {children}
+                <AlertDialogFooter className="mt-6 space-x-2">
+                    <AlertDialogCancel 
+                        className="bg-muted/60 hover:bg-muted border-white/10 text-text-primary"
+                        onClick={onClose}
+                    >
                         {cancelText}
                     </AlertDialogCancel>
                     <AlertDialogAction
                         onClick={onConfirm}
-                        className={confirmVariant === 'destructive' ? "bg-red-500 hover:bg-red-600" : ""}
+                        className={cn(
+                            "text-white",
+                            confirmVariant === 'destructive' 
+                                ? "bg-red-500/80 hover:bg-red-500" 
+                                : "bg-primary/80 hover:bg-primary"
+                        )}
                     >
                         {confirmText}
                     </AlertDialogAction>

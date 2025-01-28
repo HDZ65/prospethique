@@ -1,6 +1,6 @@
 import { z } from "zod";
 import { axiosInstance } from "@/config/axios.config";
-import { PostLinkedInSchema } from "@/libs/schemas/linkedin.schema";
+import { PostLinkedInSchema } from "@/lib/schemas/linkedin.schema";
 
 export const linkedInService = {
     publishPost: async (params: z.infer<typeof PostLinkedInSchema>) => {

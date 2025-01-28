@@ -1,5 +1,4 @@
 "use client"
-
 import * as React from "react"
 import { navigationConfig } from "@/data/dashboard-navigation"
 import { NavMain } from "@/components/nav-main"
@@ -14,14 +13,15 @@ import {
   SidebarRail,
 } from "@/components/ui/sidebar"
 
-export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
+
+export function AppSidebar({ count, ...props }: React.ComponentProps<typeof Sidebar> & { count?: number }) {
   return (
     <Sidebar collapsible="icon" {...props}>
       <SidebarHeader>
         <TeamSwitcher teams={navigationConfig.teams} />
       </SidebarHeader>
       <SidebarContent>
-        <NavMain items={navigationConfig.navMain} />
+        <NavMain items={navigationConfig.navMain} count={count} />
         <NavProjects projects={navigationConfig.projects} />
       </SidebarContent>
       <SidebarFooter>

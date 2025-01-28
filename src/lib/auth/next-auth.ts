@@ -1,7 +1,7 @@
 import NextAuth from "next-auth"
-import { authConfig } from "@/libs/auth/auth.config"
+import { authConfig } from "@/lib/auth/auth.config"
 import { FirestoreAdapter } from "@auth/firebase-adapter"
-import { db } from "@/libs/firebase/firebase-admin"
+import { db } from "@/lib/firebase/firebase-admin"
 
 export const { handlers, auth, signIn, signOut } = NextAuth({
     adapter: FirestoreAdapter(db),

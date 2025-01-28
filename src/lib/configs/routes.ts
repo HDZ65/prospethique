@@ -21,5 +21,11 @@ export const authRoutes = [
 
 export const apiAuthPrefix = '/api/auth';
 
+// Nouvelles routes API protégées
+export const apiRoutes = [
+    '/api/email-send',
+    '/api/email-send/:id'
+];
+
 export const DEFAULT_LOGIN_REDIRECT = '/dashboard';
 export const DEFAULT_LOGGED_IN_REDIRECT = '/dashboard';

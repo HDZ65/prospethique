@@ -13,6 +13,7 @@ export interface NavigationItem {
     url: string
     icon?: LucideIcon
     isActive?: boolean
+    badge?: number
     items?: {
         title: string
         url: string
@@ -68,15 +69,15 @@ export const navigationConfig: NavigationConfig = {
             items: [
                 {
                     title: "Liste des prospects",
-                    url: "/dashboard/prospect/list-prospects",
+                    url: "/dashboard",
                 },
                 {
                     title: "Ajouter un prospect",
                     url: "/dashboard/prospect/add-prospect",
                 },
                 {
-                    title: "Relances",
-                    url: "/dashboard/prospect/relances",
+                    title: "À relancer",
+                    url: "/dashboard/prospect/follow-up",
                 },
             ],
         },
@@ -87,11 +88,11 @@ export const navigationConfig: NavigationConfig = {
             items: [
                 {
                     title: "Templates",
-                    url: "/emails/templates",
+                    url: "/dashboard/emails/templates",
                 },
                 {
                     title: "Historique",
-                    url: "/emails/historique",
+                    url: "/dashboard/emails/history",
                 },
             ],
         },
@@ -102,30 +103,30 @@ export const navigationConfig: NavigationConfig = {
             items: [
                 {
                     title: "Planning",
-                    url: "/calendar",
+                    url: "/dashboard/calendar",
                 },
                 {
                     title: "Relances prévues",
-                    url: "/calendar/relances",
+                    url: "/dashboard/calendar/relances",
                 },
             ],
         },
         {
             title: "Paramètres",
-            url: "/settings",
+            url: "/dashboard/settings",
             icon: Settings2,
             items: [
                 {
                     title: "Général",
-                    url: "/settings",
+                    url: "/dashboard/settings",
                 },
                 {
                     title: "Email",
-                    url: "/settings/email",
+                    url: "/dashboard/settings/email",
                 },
                 {
                     title: "Compte",
-                    url: "/settings/account",
+                    url: "/dashboard/settings/account",
                 },
             ],
         },
@@ -138,17 +139,16 @@ export const navigationConfig: NavigationConfig = {
         },
         {
             name: "À relancer",
-            url: "/dashboard?filter=relance",
+            url: "/dashboard/prospect/follow-up",
             icon: Calendar,
         },
     ],
     breadcrumbs: {
         '/dashboard': 'Liste des prospects',
-        '/dashboard/prospect/list-prospects': 'Liste des prospects',
         '/dashboard/prospect/add-prospect': 'Ajouter un prospect',
-        '/dashboard/prospect/relances': 'Relances',
+        '/dashboard/prospect/follow-up': 'À relancer',
         '/emails/templates': 'Templates d\'emails',
-        '/emails/historique': 'Historique des emails',
+        '/emails/history': 'Historique des emails',
         '/calendar': 'Planning',
         '/calendar/relances': 'Relances prévues',
         '/settings': 'Paramètres généraux',
