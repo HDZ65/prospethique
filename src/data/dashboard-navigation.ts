@@ -69,7 +69,7 @@ export const navigationConfig: NavigationConfig = {
             items: [
                 {
                     title: "Liste des prospects",
-                    url: "/dashboard",
+                    url: "/dashboard/prospect/prospects-list",
                 },
                 {
                     title: "Ajouter un prospect",

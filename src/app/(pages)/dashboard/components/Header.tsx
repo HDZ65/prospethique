@@ -19,6 +19,7 @@ export function Header() {
         section.items?.some(item => item.url === pathname)
     )
     const pageTitle = navigationConfig.breadcrumbs[pathname] || parentSection?.items?.find(item => item.url === pathname)?.title || 'Dashboard'
+    const isRootDashboard = pathname === '/dashboard'
 
     return (
         <header className="sticky top-0 z-50 flex h-14 items-center border-b border-border/40 bg-background/95 px-4 backdrop-blur supports-[backdrop-filter]:bg-background/60">
@@ -27,25 +28,33 @@ export function Header() {
                 <Separator orientation="vertical" className="h-4" />
                 <Breadcrumb>
                     <BreadcrumbList>
-                        <BreadcrumbItem>
-                            <BreadcrumbLink href="/dashboard">Dashboard</BreadcrumbLink>
-                        </BreadcrumbItem>
-                        {parentSection && (
+                        {isRootDashboard ? (
+                            <BreadcrumbItem>
+                                <BreadcrumbPage>Dashboard</BreadcrumbPage>
+                            </BreadcrumbItem>
+                        ) : (
                             <>
-                                <BreadcrumbSeparator />
                                 <BreadcrumbItem>
-                                    <BreadcrumbLink href={parentSection.url}>
-                                        {parentSection.title}
-                                    </BreadcrumbLink>
+                                    <BreadcrumbLink href="/dashboard">Dashboard</BreadcrumbLink>
                                 </BreadcrumbItem>
-                            </>
-                        )}
-                        {pageTitle !== 'Dashboard' && (
-                            <>
-                                <BreadcrumbSeparator />
-                                <BreadcrumbItem>
-                                    <BreadcrumbPage>{pageTitle}</BreadcrumbPage>
-                                </BreadcrumbItem>
+                                {parentSection && (
+                                    <>
+                                        <BreadcrumbSeparator />
+                                        <BreadcrumbItem>
+                                            <BreadcrumbLink href={parentSection.url}>
+                                                {parentSection.title}
+                                            </BreadcrumbLink>
+                                        </BreadcrumbItem>
+                                    </>
+                                )}
+                                {pageTitle !== 'Dashboard' && (
+                                    <>
+                                        <BreadcrumbSeparator />
+                                        <BreadcrumbItem>
+                                            <BreadcrumbPage>{pageTitle}</BreadcrumbPage>
+                                        </BreadcrumbItem>
+                                    </>
+                                )}
                             </>
                         )}
                     </BreadcrumbList>

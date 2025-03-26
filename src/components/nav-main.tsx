@@ -1,5 +1,5 @@
 'use client'
-import { ChevronRight, type LucideIcon } from "lucide-react"
+import { ChevronRight, Home, type LucideIcon } from "lucide-react"
 import { Badge } from "@/components/ui/badge";
 
 import {
@@ -17,6 +17,7 @@ import {
   SidebarMenuSubButton,
   SidebarMenuSubItem,
 } from "@/components/ui/sidebar"
+import Link from "next/link";
 
 export function NavMain({
   items,
@@ -36,6 +37,16 @@ export function NavMain({
 }) {
   return (
     <SidebarGroup>
+      <SidebarMenu>
+        <SidebarMenuItem>
+          <Link href="/dashboard">
+            <SidebarMenuButton className="w-full">
+              <Home className="size-4 shrink-0" />
+              <span className="truncate font-semibold">Dashboard</span>
+            </SidebarMenuButton>
+          </Link>
+        </SidebarMenuItem>
+      </SidebarMenu>
       <SidebarGroupLabel>Platform</SidebarGroupLabel>
       <SidebarMenu>
         {items.map((item) => (

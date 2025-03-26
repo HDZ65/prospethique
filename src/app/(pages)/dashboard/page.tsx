@@ -1,24 +1,9 @@
-import { ProspectsList } from "@dashboard/prospect/list-prospects/components/prospect-list";
-import { getProspects } from "@actions/prospects/prospects.action";
-import { Suspense } from "react";
-import { ProspectWithId } from "@/lib/schemas/prospect-schema";
-import { Progress } from "@/components/ui/progress"
-
-export const dynamic = 'force-dynamic';
-export const revalidate = 0;
-
-async function ProspectsListServer() {
-    const prospects = await getProspects();
-
-    return (
-        <ProspectsList initialProspects={prospects as ProspectWithId[]} />
-    );
-}
-
 export default function DashboardPage() {
     return (
-        <Suspense fallback={<Progress value={73} />}>
-            <ProspectsListServer />
-        </Suspense>
+        <>
+            <div className="flex flex-col px-4 sm:px-6 lg:px-8 py-10">   
+                <h1 className="text-2xl font-light">Mettre un lien pour la page "/dashboard/linkedin"</h1>
+            </div>
+        </>
     );
 }

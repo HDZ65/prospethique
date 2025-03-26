@@ -13,7 +13,6 @@ import {
   SidebarRail,
 } from "@/components/ui/sidebar"
 
-
 export function AppSidebar({ count, ...props }: React.ComponentProps<typeof Sidebar> & { count?: number }) {
   return (
     <Sidebar collapsible="icon" {...props}>
