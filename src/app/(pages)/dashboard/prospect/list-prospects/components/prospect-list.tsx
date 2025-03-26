@@ -106,35 +106,37 @@ export const ProspectsList = ({ initialProspects }: ProspectsListProps) => {
         <>
             <Card className="bg-gradient-glass backdrop-blur-glass border-none shadow-glass">
                 <CardHeader className="border-b border-white/10 space-y-6 px-4">
-                    <div className="flex items-center justify-between">
-                        <div className="flex items-center gap-3">
-                            <motion.div
-                                className="p-2 rounded-lg bg-muted/60 border border-white/5"
-                                whileHover={{ scale: 1.05 }}
-                                transition={{ duration: 0.15 }}
-                            >
-                                <Users className="w-5 h-5 text-primary" />
-                            </motion.div>
-                            <h1 className="text-2xl font-medium text-text-primary">
-                                Liste des prospects
-                            </h1>
+                    <div className="flex flex-col space-y-6">
+                        <div className="flex items-center gap-6">
+                            <div className="flex items-center gap-3">
+                                <motion.div
+                                    className="p-2 rounded-lg bg-muted/60 border border-white/5"
+                                    whileHover={{ scale: 1.05 }}
+                                    transition={{ duration: 0.15 }}
+                                >
+                                    <Users className="w-5 h-5 text-primary" />
+                                </motion.div>
+                                <h1 className="text-2xl font-medium text-text-primary">
+                                    Liste des prospects
+                                </h1>
+                            </div>
+                            <Button asChild>
+                                <Link href="/dashboard/prospect/add-prospect">
+                                    Nouveau prospect
+                                </Link>
+                            </Button>
                         </div>
-                        <Button asChild>
-                            <Link href="/dashboard/prospect/add-prospect">
-                                Nouveau prospect
-                            </Link>
-                        </Button>
-                    </div>
 
-                    <div className="relative">
-                        <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-text-tertiary w-4 h-4" />
-                        <Input
-                            type="search"
-                            placeholder="Rechercher un prospect..."
-                            value={searchTerm}
-                            onChange={(e) => setSearchTerm(e.target.value)}
-                            className="pl-10 bg-muted/60 border-white/10 shadow-input placeholder:text-text-tertiary focus:border-primary/30 hover:border-white/20"
-                        />
+                        <div className="relative">
+                            <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-text-tertiary w-4 h-4" />
+                            <Input
+                                type="search"
+                                placeholder="Rechercher un prospect..."
+                                value={searchTerm}
+                                onChange={(e) => setSearchTerm(e.target.value)}
+                                className="pl-10 bg-muted/60 border-white/10 shadow-input placeholder:text-text-tertiary focus:border-primary/30 hover:border-white/20"
+                            />
+                        </div>
                     </div>
                 </CardHeader>
 

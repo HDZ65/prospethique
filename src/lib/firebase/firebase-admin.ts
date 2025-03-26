@@ -1,6 +1,7 @@
-
 import admin from "firebase-admin";
 import { getFirestore, Firestore } from "firebase-admin/firestore";
+
+export const runtime = 'nodejs'
 
 // Vérification des variables d'environnement requises
 const requiredEnvVars = [

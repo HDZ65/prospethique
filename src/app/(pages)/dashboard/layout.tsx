@@ -1,23 +1,16 @@
 import { getFollowUpCount } from "@/_actions/prospects/email.action"
-import { AppSidebar } from "@/components/app-sidebar"
-import { SidebarInset, SidebarProvider } from "@/components/ui/sidebar"
-import { Header } from "@dashboard/components/Header"
+import { DashboardLayout } from "./components/DashboardLayout"
 
-export default async function DashboardLayout({
+export default async function Layout({
     children,
 }: {
-    children: React.ReactNode,
+    children: React.ReactNode
 }) {
     const count = await getFollowUpCount()
+    
     return (
-        <SidebarProvider>
-            <AppSidebar className="hidden md:flex" count={count.data?.count} />
-            <SidebarInset>
-                <Header />
-                <div className="flex-1 p-4">
-                    {children}
-                </div>
-            </SidebarInset>
-        </SidebarProvider>
+        <DashboardLayout count={count.data?.count}>
+            {children}
+        </DashboardLayout>
     )
 }   

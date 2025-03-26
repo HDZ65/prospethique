@@ -15,7 +15,7 @@ export const Header = async () => {
     return (
         <header className="sticky top-0 z-50 w-full border-b bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60">
             <div className="container flex h-16 items-center">
-                <div className="flex items-center gap-8 flex-1">
+                <div className="flex items-center gap-10 flex-1">
                     {/* Logo */}
                     <Link
                         href={branding.logo.publicHref}
@@ -30,7 +30,7 @@ export const Header = async () => {
                     </Link>
 
                     {/* Navigation Desktop */}
-                    <nav className="hidden md:flex items-center gap-6" role="navigation" aria-label="Menu principal">
+                    <nav className="hidden md:flex items-center gap-3" role="navigation" aria-label="Menu principal">
                         {publicMenuItems.map((item) => (
                             <Button key={item.href} variant="ghost" asChild>
                                 <Link href={item.href}>
@@ -50,7 +50,7 @@ export const Header = async () => {
                             <Link href="/auth/sign-in">Se connecter</Link>
                         </Button>
                         <Button asChild>
-                            <Link href="/auth/sign-up">Commencer gratuitement</Link>
+                            <Link href="/auth/register">Commencer gratuitement</Link>
                         </Button>
                     </div>
 
@@ -77,7 +77,7 @@ export const Header = async () => {
                                         <Link href="/auth/sign-in">Se connecter</Link>
                                     </Button>
                                     <Button asChild>
-                                        <Link href="/auth/sign-up">Commencer gratuitement</Link>
+                                        <Link href="/auth/register">Commencer gratuitement</Link>
                                     </Button>
                                 </div>
                             </nav>

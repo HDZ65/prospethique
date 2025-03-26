@@ -1,5 +1,9 @@
 "use client"
 
+import { usePathname } from "next/navigation"
+import { navigationConfig } from "@/data/dashboard-navigation"
+import { SidebarTrigger } from "@/components/ui/sidebar"
+import { Separator } from "@/components/ui/separator"
 import {
     Breadcrumb,
     BreadcrumbItem,
@@ -8,33 +12,19 @@ import {
     BreadcrumbPage,
     BreadcrumbSeparator,
 } from "@/components/ui/breadcrumb"
-import { Separator } from "@/components/ui/separator"
-import { SidebarTrigger } from "@/components/ui/sidebar"
-import { navigationConfig } from "@/data/dashboard-navigation"
-import { usePathname } from "next/navigation"
 
 export function Header() {
     const pathname = usePathname()
-    const pageTitle = navigationConfig.breadcrumbs[pathname] || 'Dashboard'
-
-    // Trouve la section parent dans la navigation
-    const getParentSection = () => {
-        const section = navigationConfig.navMain.find(item =>
-            item.items?.some(subItem => subItem.url === pathname)
-        )
-        return section ? {
-            title: section.title,
-            url: section.url
-        } : null
-    }
-
-    const parentSection = getParentSection()
+    const parentSection = navigationConfig.navMain.find(section =>
+        section.items?.some(item => item.url === pathname)
+    )
+    const pageTitle = navigationConfig.breadcrumbs[pathname] || parentSection?.items?.find(item => item.url === pathname)?.title || 'Dashboard'
 
     return (
-        <header className="flex h-16 shrink-0 items-center gap-2 border-b">
-            <div className="flex items-center gap-2 px-4">
-                <SidebarTrigger className="-ml-1" />
-                <Separator orientation="vertical" className="mr-2 h-4" />
+        <header className="sticky top-0 z-50 flex h-14 items-center border-b border-border/40 bg-background/95 px-4 backdrop-blur supports-[backdrop-filter]:bg-background/60">
+            <div className="flex flex-1 items-center gap-2">
+                <SidebarTrigger className="-ml-2" />
+                <Separator orientation="vertical" className="h-4" />
                 <Breadcrumb>
                     <BreadcrumbList>
                         <BreadcrumbItem>

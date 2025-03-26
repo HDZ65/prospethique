@@ -9,6 +9,9 @@ import {
     DEFAULT_LOGGED_IN_REDIRECT 
 } from "@/lib/configs/routes";
 import { NextResponse } from "next/server";
+import type { NextRequest } from 'next/server'
+
+export const runtime = 'edge'
 
 const { auth } = NextAuth(authConfig)
 
@@ -43,21 +46,24 @@ export default auth((req) => {
         return NextResponse.next();
     }
 
-    // Redirection vers la page de connexion si non connecté
-    if (!isLoggedIn && !isPublicRoute && !isRootPage) {
-        let callbackUrl = nextUrl.pathname;
-        if (nextUrl.search) {
-            callbackUrl += nextUrl.search;
-        }
-        
-        const encodedCallbackUrl = encodeURIComponent(callbackUrl);
-        return NextResponse.redirect(
-            new URL(`/auth/sign-in?callbackUrl=${encodedCallbackUrl}`, nextUrl)
-        );
+    // Protéger les routes non publiques
+    if (!isLoggedIn && !isPublicRoute) {
+        return NextResponse.redirect(new URL('/auth/sign-in', nextUrl));
     }
 
     return NextResponse.next();
 });
+
+export function middleware(request: NextRequest) {
+    const requestHeaders = new Headers(request.headers)
+    requestHeaders.set('x-pathname', request.nextUrl.pathname)
+
+    return NextResponse.next({
+        request: {
+            headers: requestHeaders,
+        },
+    })
+}
 
 export const config = {
     matcher: [
