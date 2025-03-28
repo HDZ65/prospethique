@@ -12,6 +12,7 @@ import {
     BreadcrumbPage,
     BreadcrumbSeparator,
 } from "@/components/ui/breadcrumb"
+import { ThemeToggle } from "@/components/theme/theme-toggle"
 
 export function Header() {
     const pathname = usePathname()
@@ -60,6 +61,7 @@ export function Header() {
                     </BreadcrumbList>
                 </Breadcrumb>
             </div>
+            <ThemeToggle />
         </header>
     )
 }

@@ -5,6 +5,7 @@ import {
     Building2,
     BarChart3,
     Calendar,
+    Linkedin,
 } from "lucide-react"
 import { type LucideIcon } from "lucide-react"
 
@@ -87,6 +88,10 @@ export const navigationConfig: NavigationConfig = {
             icon: Mail,
             items: [
                 {
+                    title: "Générateur",
+                    url: "/dashboard/emails/generator"
+                },
+                {
                     title: "Templates",
                     url: "/dashboard/emails/templates",
                 },
@@ -95,6 +100,17 @@ export const navigationConfig: NavigationConfig = {
                     url: "/dashboard/emails/history",
                 },
             ],
+        },
+        {
+            title:"Linkedin",
+            url: "/linkedin",
+            icon: Linkedin,
+            items: [
+                {
+                    title: "Post Linkedin",
+                    url: "/dashboard/linkedin"
+                }
+            ]
         },
         {
             title: "Calendrier",
