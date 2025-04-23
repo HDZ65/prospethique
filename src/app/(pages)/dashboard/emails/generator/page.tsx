@@ -595,41 +595,28 @@ export default function EmailGeneratorPage() {
     setTextBlocks(prev => prev.filter(block => block.id !== blockId))
   }
 
-  // Mise à jour des blocs de texte quand le template ou les blocs personnalisés changent
+  // Effet pour initialiser les blocs de texte quand un template est sélectionné
   useEffect(() => {
-    if (!selectedTemplate) {
-      setTextBlocks([])
-      return
-    }
+    if (selectedTemplate) {
+      const activeProspect = selectedProspect || manualProspect
+      const templateContent = selectedTemplate.content
+        .replace('{{prenom}}', activeProspect?.prenom || '[Prénom]')
+        .replace('{{date_proposition}}', activeProspect?.date_proposition || '[Date]')
+        .replace('{{poste}}', '[Poste]')
+        .replace('{{entreprise}}', '[Entreprise]')
 
-    const blocks: TextBlock[] = []
-    
-    // Ajout du contenu du template
-    const activeProspect = selectedProspect || manualProspect
-    const templateContent = selectedTemplate.content
-      .replace('{{prenom}}', activeProspect?.prenom || '[Prénom]')
-      .replace('{{date_proposition}}', activeProspect?.date_proposition || '[Date]')
-
-    const templateParagraphs = templateContent.split('\n\n').filter(Boolean)
-    templateParagraphs.forEach((paragraph, index) => {
-      blocks.push({
+      const templateParagraphs = templateContent.split('\n\n').filter(Boolean)
+      const blocks: TextBlock[] = templateParagraphs.map((paragraph, index) => ({
         id: `template-${index}`,
         content: paragraph,
         type: 'template'
-      })
-    })
+      }))
 
-    // Ajout des blocs personnalisés
-    customBlocks.forEach((block) => {
-      blocks.push({
-        id: block.id,
-        content: block.content,
-        type: 'custom'
-      })
-    })
-
-    setTextBlocks(blocks)
-  }, [selectedTemplate, selectedProspect, manualProspect, customBlocks])
+      setTextBlocks(blocks)
+    } else {
+      setTextBlocks([])
+    }
+  }, [selectedTemplate, selectedProspect, manualProspect])
 
   // Gestion du drag and drop
   const handleDragEnd = (event: any) => {
@@ -742,373 +729,331 @@ export default function EmailGeneratorPage() {
   }
 
   return (
-    <div className="px-4 py-6 space-y-6">
-      <div className="flex items-center justify-between">
-        <h1 className="text-2xl font-semibold">Générer un email</h1>
+    <div className="h-[calc(100vh-4rem)] flex flex-col bg-neutral-100 dark:bg-neutral-900">
+      {/* Header */}
+      <div className="px-4 py-3 border-b bg-background backdrop-blur-sm">
+        <div className="flex items-center justify-between">
+          <div className="flex items-center gap-2">
+            <div className="h-8 w-8 rounded-lg bg-neutral-100 dark:bg-neutral-900  flex items-center justify-center">
+              <Mail className="h-4 w-4 " />
+            </div>
+            <h1 className="text-xl font-semibold ">
+              Générer un email
+            </h1>
+          </div>
+          <div className="flex items-center gap-2">
+            <Button variant="outline" size="sm" onClick={() => setShowHistory(true)} className="hover:bg-primary/5">
+              <History className="h-4 w-4 mr-1 text-primary/70" />
+              Historique
+            </Button>
+            <Button variant="outline" size="sm" onClick={() => setShowStats(true)} className="hover:bg-primary/5">
+              <BarChart className="h-4 w-4 mr-1 text-primary/70" />
+              Statistiques
+            </Button>
+          </div>
+        </div>
       </div>
 
-      <div className={cn(
-        "grid gap-6",
-        isPreviewFullscreen 
-          ? "grid-cols-1" 
-          : "grid-cols-1 md:grid-cols-2 lg:grid-cols-3"
-      )}>
-        {!isPreviewFullscreen && (
-          <>
-            <Card>
-              <CardHeader>
+      {/* Main Content */}
+      <div className="flex-1 grid grid-cols-3 gap-4 p-4 overflow-hidden">
+        {/* Left Column - Editor */}
+        <div className="flex flex-col gap-4 overflow-hidden">
+          {/* Configuration Card */}
+          <Card className="flex-1 overflow-hidden border-primary/10 shadow-lg">
+            <CardHeader className="border-b bg-gray-950">
+              <div className="flex items-center justify-between">
                 <div className="flex items-center space-x-2">
-                  <Settings className="h-4 w-4" />
-                  <CardTitle>Configuration</CardTitle>
+                  <div className="h-8 w-8 rounded-lg bg-primary/10 flex items-center justify-center">
+                    <Settings className="h-4 w-4 text-primary" />
+                  </div>
+                  <CardTitle className="text-primary">Configuration</CardTitle>
                 </div>
-              </CardHeader>
-              <CardContent className="space-y-6">
-                <div className="space-y-4">
-                  <div>
-                    <Label htmlFor="prospect" className="flex items-center gap-2">
-                      Sélectionner un prospect
-                      {!selectedProspect && !manualProspect && (
-                        <Badge variant="destructive" className="text-xs">Requis</Badge>
-                      )}
-                    </Label>
-                    <Button
-                      variant="ghost"
-                      size="sm"
-                      onClick={() => window.location.href = '/dashboard/prospect/nouveau'}
-                    >
-                      <UserPlus className="h-4 w-4 mr-1" />
-                      Nouveau prospect
-                    </Button>
-                  </div>
-                  <Select onValueChange={(value) => {
-                    const prospect = SAMPLE_PROSPECTS.find(p => p.id.toString() === value)
-                    setSelectedProspect(prospect || null)
-                    if (prospect) {
-                      setManualProspect({
-                        prenom: '',
-                        email: '',
-                        date_proposition: ''
-                      })
-                    }
-                  }}>
-                    <SelectTrigger>
-                      <SelectValue placeholder="Choisir un prospect" />
-                    </SelectTrigger>
-                    <SelectContent>
-                      {SAMPLE_PROSPECTS.map((prospect) => (
-                        <SelectItem key={prospect.id} value={prospect.id.toString()}>
-                          {prospect.prenom} ({prospect.email})
-                        </SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
-                </div>
-
-                <Separator />
-
-                <div className="space-y-4">
-                  <div>
-                    <Label htmlFor="prenom" className="flex items-center gap-2">
-                      Prénom
-                      {!selectedProspect?.prenom && !manualProspect.prenom && (
-                        <Badge variant="secondary" className="text-xs bg-yellow-100 text-yellow-800 hover:bg-yellow-100">Requis</Badge>
-                      )}
-                    </Label>
-                    <Input
-                      id="prenom"
-                      type="text"
-                      placeholder="Prénom du prospect"
-                      value={selectedProspect?.prenom || manualProspect.prenom}
-                      onChange={(e) => {
-                        if (!selectedProspect) {
-                          setManualProspect(prev => ({ ...prev, prenom: e.target.value }))
-                        }
-                      }}
-                      disabled={!!selectedProspect}
-                      className={cn(
-                        "transition-colors",
-                        !selectedProspect?.prenom && !manualProspect.prenom && "border-yellow-500 focus-visible:ring-yellow-500"
-                      )}
-                    />
-                  </div>
-                  <div>
-                    <Label htmlFor="email" className="flex items-center gap-2">
-                      Email
-                      {!selectedProspect?.email && !manualProspect.email && (
-                        <Badge variant="secondary" className="text-xs bg-yellow-100 text-yellow-800 hover:bg-yellow-100">Requis</Badge>
-                      )}
-                    </Label>
-                    <Input
-                      id="email"
-                      type="email"
-                      placeholder="Email du prospect"
-                      value={selectedProspect?.email || manualProspect.email}
-                      onChange={(e) => {
-                        if (!selectedProspect) {
-                          setManualProspect(prev => ({ ...prev, email: e.target.value }))
-                        }
-                      }}
-                      disabled={!!selectedProspect}
-                      className={cn(
-                        "transition-colors",
-                        !selectedProspect?.email && !manualProspect.email && "border-yellow-500 focus-visible:ring-yellow-500"
-                      )}
-                    />
-                  </div>
-                  <div>
-                    <Label htmlFor="date_proposition" className="flex items-center gap-2">
-                      Date de proposition
-                      {!selectedProspect?.date_proposition && !manualProspect.date_proposition && (
-                        <Badge variant="secondary" className="text-xs bg-yellow-100 text-yellow-800 hover:bg-yellow-100">Requis</Badge>
-                      )}
-                    </Label>
-                    <Input
-                      id="date_proposition"
-                      type="text"
-                      placeholder="Ex: la semaine prochaine"
-                      value={selectedProspect?.date_proposition || manualProspect.date_proposition}
-                      onChange={(e) => {
-                        if (selectedProspect) {
-                          setSelectedProspect({
-                            ...selectedProspect,
-                            date_proposition: e.target.value
-                          })
-                        } else {
-                          setManualProspect(prev => ({ ...prev, date_proposition: e.target.value }))
-                        }
-                      }}
-                      className={cn(
-                        "transition-colors",
-                        !selectedProspect?.date_proposition && !manualProspect.date_proposition && "border-yellow-500 focus-visible:ring-yellow-500"
-                      )}
-                    />
-                  </div>
-                  {selectedProspect && (
-                    <div>
-                      <Label>Notes</Label>
-                      <Textarea
-                        value={selectedProspect.notes || ''}
-                        onChange={(e) => setSelectedProspect({
-                          ...selectedProspect,
-                          notes: e.target.value
-                        })}
-                      />
-                    </div>
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  onClick={() => window.location.href = '/dashboard/prospect/nouveau'}
+                  className="hover:bg-primary/10"
+                >
+                  <UserPlus className="h-4 w-4 mr-1 text-primary/70" />
+                  Nouveau prospect
+                </Button>
+              </div>
+            </CardHeader>
+            <CardContent className="p-4 space-y-4 overflow-y-auto">
+              {/* Prospect Selection */}
+              <div className="space-y-2">
+                <Label htmlFor="prospect" className="flex items-center gap-2">
+                  Sélectionner un prospect
+                  {!selectedProspect && !manualProspect && (
+                    <Badge variant="destructive" className="text-xs">Requis</Badge>
                   )}
-                </div>
+                </Label>
+                <Select onValueChange={(value) => {
+                  const prospect = SAMPLE_PROSPECTS.find(p => p.id.toString() === value)
+                  setSelectedProspect(prospect || null)
+                  if (prospect) {
+                    setManualProspect({
+                      prenom: '',
+                      email: '',
+                      date_proposition: ''
+                    })
+                  }
+                }}>
+                  <SelectTrigger>
+                    <SelectValue placeholder="Choisir un prospect" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {SAMPLE_PROSPECTS.map((prospect) => (
+                      <SelectItem key={prospect.id} value={prospect.id.toString()}>
+                        {prospect.prenom} ({prospect.email})
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
 
-                <Separator />
-
+              {/* Prospect Details */}
+              <div className="grid grid-cols-2 gap-4">
                 <div className="space-y-2">
-                  <div className="flex items-center justify-between">
-                    <Label htmlFor="template" className="flex items-center gap-2">
-                      Template d'email
-                      {!selectedTemplate && (
-                        <Badge variant="secondary" className="text-xs bg-yellow-100 text-yellow-800 hover:bg-yellow-100">Requis</Badge>
-                      )}
-                    </Label>
-                    <Button
-                      variant="ghost"
-                      size="sm"
-                      onClick={() => setShowNewTemplateModal(true)}
-                    >
-                      <FileText className="h-4 w-4 mr-1" />
-                      Nouveau template
-                    </Button>
-                  </div>
-                  <Select onValueChange={(value) => {
-                    const template = [...DEFAULT_TEMPLATES, ...customTemplates].find(t => t.id.toString() === value)
-                    setSelectedTemplate(template || null)
-                  }}>
-                    <SelectTrigger className={cn(
-                      "transition-colors",
-                      !selectedTemplate && "border-yellow-500 focus-visible:ring-yellow-500"
-                    )}>
-                      <SelectValue placeholder="Choisir un template" />
-                    </SelectTrigger>
-                    <SelectContent>
-                      {[...DEFAULT_TEMPLATES, ...customTemplates].map((template) => (
-                        <SelectItem key={template.id} value={template.id.toString()}>
-                          {template.name}
-                          {template.isCustom && (
-                            <Badge variant="secondary" className="ml-2">Personnalisé</Badge>
-                          )}
-                        </SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
-                </div>
-
-                <Separator />
-
-                <div className="space-y-2">
-                  <Label htmlFor="subject" className="flex items-center gap-2">
-                    Objet de l'email
-                    {!emailSubject && !selectedTemplate?.name && (
-                      <Badge variant="secondary" className="text-xs bg-yellow-100 text-yellow-800 hover:bg-yellow-100">Requis</Badge>
+                  <Label htmlFor="prenom" className="flex items-center gap-2">
+                    Prénom
+                    {!selectedProspect?.prenom && !manualProspect.prenom && (
+                      <Badge variant="secondary" className="text-xs">Requis</Badge>
                     )}
                   </Label>
                   <Input
-                    id="subject"
-                    placeholder="Entrez l'objet de l'email"
-                    value={emailSubject}
-                    onChange={(e) => setEmailSubject(e.target.value)}
-                    className={cn(
-                      "transition-colors",
-                      !emailSubject && !selectedTemplate?.name && "border-yellow-500 focus-visible:ring-yellow-500"
-                    )}
+                    id="prenom"
+                    type="text"
+                    placeholder="Prénom du prospect"
+                    value={selectedProspect?.prenom || manualProspect.prenom}
+                    onChange={(e) => {
+                      if (!selectedProspect) {
+                        setManualProspect(prev => ({ ...prev, prenom: e.target.value }))
+                      }
+                    }}
+                    disabled={!!selectedProspect}
                   />
                 </div>
-              </CardContent>
-            </Card>
-
-            <Card>
-              <CardHeader>
-                <div className="flex items-center space-x-2">
-                  <Wand2 className="h-4 w-4" />
-                  <CardTitle>Personnalisation</CardTitle>
+                <div className="space-y-2">
+                  <Label htmlFor="email" className="flex items-center gap-2">
+                    Email
+                    {!selectedProspect?.email && !manualProspect.email && (
+                      <Badge variant="secondary" className="text-xs">Requis</Badge>
+                    )}
+                  </Label>
+                  <Input
+                    id="email"
+                    type="email"
+                    placeholder="Email du prospect"
+                    value={selectedProspect?.email || manualProspect.email}
+                    onChange={(e) => {
+                      if (!selectedProspect) {
+                        setManualProspect(prev => ({ ...prev, email: e.target.value }))
+                      }
+                    }}
+                    disabled={!!selectedProspect}
+                  />
                 </div>
-              </CardHeader>
-              <CardContent>
-                <div className="space-y-6">
-                  {/* Suggestions rapides */}
-                  <div className="space-y-4">
-                    <div className="flex items-center justify-between mb-2">
-                      <div className="flex items-center gap-2">
-                        <Label>Suggestions rapides</Label>
-                        <Badge variant="secondary">IA</Badge>
-                      </div>
-                      <Button variant="ghost" size="sm" onClick={generateNewSuggestions}>
-                        <Sparkles className="h-4 w-4 mr-1" />
-                        Générer
-                      </Button>
-                    </div>
-                    
-                    <div className="flex flex-wrap gap-2">
-                      <Badge
-                        variant={selectedSuggestionCategory === 'all' ? "default" : "secondary"}
-                        className="cursor-pointer hover:bg-primary/90"
-                        onClick={() => filterSuggestionsByCategory('all')}
-                      >
-                        Toutes
-                      </Badge>
-                      {[
-                        { value: 'introduction', label: 'Introduction' },
-                        { value: 'accroche', label: 'Accroche' },
-                        { value: 'valorisation', label: 'Valorisation' },
-                        { value: 'transition', label: 'Transition' },
-                        { value: 'proposition', label: 'Proposition' },
-                        { value: 'benefices', label: 'Bénéfices' },
-                        { value: 'objection', label: 'Objection' },
-                        { value: 'conclusion', label: 'Conclusion' }
-                      ].map((category) => (
-                        <Badge
-                          key={category.value}
-                          variant={selectedSuggestionCategory === category.value ? "default" : "secondary"}
-                          className="cursor-pointer hover:bg-primary/90"
-                          onClick={() => filterSuggestionsByCategory(category.value)}
-                        >
-                          {category.label}
-                        </Badge>
-                      ))}
-                    </div>
+              </div>
 
-                    <ScrollArea className="h-[250px]">
-                      <div className="space-y-2">
-                        {suggestions.map((suggestion) => (
-                          <Button
-                            key={suggestion.id}
-                            variant="outline"
-                            className="w-full justify-start text-left whitespace-normal h-auto py-3"
-                            onClick={() => {
-                              const newBlock = {
-                                id: `suggestion-${Date.now()}`,
-                                content: suggestion.text,
-                                type: 'custom' as const
-                              }
-                              setTextBlocks(prev => [...prev, newBlock])
-                            }}
-                          >
-                            <MessageSquare className="h-4 w-4 mr-1 shrink-0" />
-                            <span className="line-clamp-2">{suggestion.text}</span>
-                          </Button>
-                        ))}
-                      </div>
-                    </ScrollArea>
-                  </div>
-
-                  <Separator />
-
-                  {/* Texte personnalisé */}
-                  <div className="space-y-4">
-                    <div className="flex items-center justify-between">
-                      <Label>Texte personnalisé</Label>
-                      <Button
-                        variant="ghost"
-                        size="sm"
-                        onClick={addCustomBlock}
-                        disabled={!currentCustomText.trim()}
-                      >
-                        <Plus className="h-4 w-4 mr-1" />
-                        Ajouter un bloc
-                      </Button>
-                    </div>
-                    <Textarea
-                      placeholder="Écrivez votre texte personnalisé ici..."
-                      value={currentCustomText}
-                      onChange={(e) => setCurrentCustomText(e.target.value)}
-                      className="min-h-[100px] resize-none"
-                    />
-                  </div>
-
-                  {/* Données LinkedIn */}
-                  {selectedProspect?.linkedInData && (
-                    <div className="space-y-4">
-                      <div className="flex items-center justify-between">
-                        <Label>Données LinkedIn</Label>
-                        <Badge variant="secondary">
-                          <Linkedin className="mr-1 h-3 w-3" />
-                          Connecté
-                        </Badge>
-                      </div>
-                      <ScrollArea className="h-[200px]">
-                        <div className="space-y-2">
-                          {selectedProspect.linkedInData.activites.map((activite, index) => (
-                            <div key={index} className="text-sm p-2 bg-muted rounded-lg">
-                              {activite.contenu}
-                            </div>
-                          ))}
-                        </div>
-                      </ScrollArea>
-                    </div>
+              <div className="space-y-2">
+                <Label htmlFor="date_proposition" className="flex items-center gap-2">
+                  Date de proposition
+                  {!selectedProspect?.date_proposition && !manualProspect.date_proposition && (
+                    <Badge variant="secondary" className="text-xs">Requis</Badge>
                   )}
-                </div>
-              </CardContent>
-            </Card>
-          </>
-        )}
+                </Label>
+                <Input
+                  id="date_proposition"
+                  type="text"
+                  placeholder="Ex: la semaine prochaine"
+                  value={selectedProspect?.date_proposition || manualProspect.date_proposition}
+                  onChange={(e) => {
+                    if (selectedProspect) {
+                      setSelectedProspect({
+                        ...selectedProspect,
+                        date_proposition: e.target.value
+                      })
+                    } else {
+                      setManualProspect(prev => ({ ...prev, date_proposition: e.target.value }))
+                    }
+                  }}
+                />
+              </div>
 
-        <Card className={cn(isPreviewFullscreen && "col-span-full")}>
-          <CardHeader>
+              {/* Template Selection */}
+              <div className="space-y-2">
+                <div className="flex items-center justify-between">
+                  <Label htmlFor="template" className="flex items-center gap-2">
+                    Template d'email
+                    {!selectedTemplate && (
+                      <Badge variant="secondary" className="text-xs">Requis</Badge>
+                    )}
+                  </Label>
+                  <Button
+                    variant="ghost"
+                    size="sm"
+                    onClick={() => setShowNewTemplateModal(true)}
+                  >
+                    <FileText className="h-4 w-4 mr-1" />
+                    Nouveau template
+                  </Button>
+                </div>
+                <Select onValueChange={(value) => {
+                  const template = [...DEFAULT_TEMPLATES, ...customTemplates].find(t => t.id.toString() === value)
+                  setSelectedTemplate(template || null)
+                }}>
+                  <SelectTrigger>
+                    <SelectValue placeholder="Choisir un template" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {[...DEFAULT_TEMPLATES, ...customTemplates].map((template) => (
+                      <SelectItem key={template.id} value={template.id.toString()}>
+                        <div className="flex items-center justify-between">
+                          <span>{template.name}</span>
+                          {template.isCustom && (
+                            <Badge variant="secondary" className="ml-2">Personnalisé</Badge>
+                          )}
+                        </div>
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
+
+              {/* Subject */}
+              <div className="space-y-2">
+                <Label htmlFor="subject" className="flex items-center gap-2">
+                  Objet de l'email
+                  {!emailSubject && !selectedTemplate?.name && (
+                    <Badge variant="secondary" className="text-xs">Requis</Badge>
+                  )}
+                </Label>
+                <Input
+                  id="subject"
+                  placeholder="Entrez l'objet de l'email"
+                  value={emailSubject}
+                  onChange={(e) => setEmailSubject(e.target.value)}
+                />
+              </div>
+            </CardContent>
+          </Card>
+        </div>
+
+        {/* Middle Column - Suggestions */}
+        <div className="flex flex-col gap-4 overflow-hidden">
+          {/* Suggestions Card */}
+          <Card className="flex-1 overflow-hidden border-primary/10 shadow-lg">
+            <CardHeader className="border-b bg-primary/5">
+              <div className="flex items-center justify-between">
+                <div className="flex items-center space-x-2">
+                  <div className="h-8 w-8 rounded-lg bg-primary/10 flex items-center justify-center">
+                    <Wand2 className="h-4 w-4 text-primary" />
+                  </div>
+                  <CardTitle className="text-primary/90">Suggestions IA</CardTitle>
+                </div>
+                <Button 
+                  variant="ghost" 
+                  size="sm" 
+                  onClick={generateNewSuggestions}
+                  className="hover:bg-primary/10"
+                >
+                  <Sparkles className="h-4 w-4 mr-1 text-primary/70" />
+                  Générer
+                </Button>
+              </div>
+            </CardHeader>
+            <CardContent className="p-4">
+              <div className="flex flex-wrap gap-2 mb-4">
+                <Badge
+                  variant={selectedSuggestionCategory === 'all' ? "default" : "secondary"}
+                  className="cursor-pointer hover:bg-primary/10 transition-colors"
+                  onClick={() => filterSuggestionsByCategory('all')}
+                >
+                  Toutes
+                </Badge>
+                {[
+                  { value: 'introduction', label: 'Introduction' },
+                  { value: 'accroche', label: 'Accroche' },
+                  { value: 'valorisation', label: 'Valorisation' },
+                  { value: 'transition', label: 'Transition' },
+                  { value: 'proposition', label: 'Proposition' },
+                  { value: 'benefices', label: 'Bénéfices' },
+                  { value: 'objection', label: 'Objection' },
+                  { value: 'conclusion', label: 'Conclusion' }
+                ].map((category) => (
+                  <Badge
+                    key={category.value}
+                    variant={selectedSuggestionCategory === category.value ? "default" : "secondary"}
+                    className="cursor-pointer hover:bg-primary/10 transition-colors"
+                    onClick={() => filterSuggestionsByCategory(category.value)}
+                  >
+                    {category.label}
+                  </Badge>
+                ))}
+              </div>
+              <ScrollArea className="h-[calc(100vh-24rem)]">
+                <div className="space-y-2">
+                  {suggestions.map((suggestion) => (
+                    <Button
+                      key={suggestion.id}
+                      variant="outline"
+                      className="w-full justify-start text-left whitespace-normal h-auto py-3 hover:bg-primary/5 transition-colors"
+                      onClick={() => {
+                        const newBlock = {
+                          id: `suggestion-${Date.now()}`,
+                          content: suggestion.text,
+                          type: 'custom' as const
+                        }
+                        setTextBlocks(prev => [...prev, newBlock])
+                      }}
+                    >
+                      <MessageSquare className="h-4 w-4 mr-1 shrink-0 text-primary/70" />
+                      <span className="line-clamp-2">{suggestion.text}</span>
+                    </Button>
+                  ))}
+                </div>
+              </ScrollArea>
+            </CardContent>
+          </Card>
+        </div>
+
+        {/* Right Column - Preview */}
+        <Card className="flex flex-col overflow-hidden border-primary/10 shadow-lg">
+          <CardHeader className="border-b bg-primary/5">
             <div className="flex items-center justify-between">
               <div className="flex items-center space-x-2">
-                <Mail className="h-4 w-4" />
-                <CardTitle>Prévisualisation</CardTitle>
+                <div className="h-8 w-8 rounded-lg bg-primary/10 flex items-center justify-center">
+                  <Mail className="h-4 w-4 text-primary" />
+                </div>
+                <CardTitle className="text-primary/90">Prévisualisation</CardTitle>
               </div>
-              <Button
-                variant="ghost"
-                size="sm"
-                onClick={() => setIsPreviewFullscreen(!isPreviewFullscreen)}
-              >
-                {isPreviewFullscreen ? <Minimize2 className="h-4 w-4" /> : <Maximize2 className="h-4 w-4" />}
-              </Button>
+              <div className="flex items-center gap-2">
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  onClick={() => setShowScheduler(true)}
+                  className="hover:bg-primary/10"
+                >
+                  <Clock className="h-4 w-4 mr-1 text-primary/70" />
+                  Programmer
+                </Button>
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  onClick={() => setIsPreviewFullscreen(!isPreviewFullscreen)}
+                  className="hover:bg-primary/10"
+                >
+                  {isPreviewFullscreen ? <Minimize2 className="h-4 w-4 text-primary/70" /> : <Maximize2 className="h-4 w-4 text-primary/70" />}
+                </Button>
+              </div>
             </div>
           </CardHeader>
-          <CardContent>
-            <div className="border rounded-lg">
-              <div className="p-4 bg-muted border-b rounded-t-lg">
+          <CardContent className="flex-1 p-4 overflow-y-auto">
+            <div className="border rounded-lg shadow-sm">
+              <div className="p-4 bg-primary/5 border-b rounded-t-lg">
                 <div className="space-y-1">
-                  <div className="text-sm font-medium">À: {(selectedProspect || manualProspect)?.email || '[Email]'}</div>
+                  <div className="text-sm font-medium text-primary/90">À: {(selectedProspect || manualProspect)?.email || '[Email]'}</div>
                   <div className="text-sm text-muted-foreground">Objet: {emailSubject || selectedTemplate?.name || '[Objet]'}</div>
                 </div>
               </div>
@@ -1136,20 +1081,10 @@ export default function EmailGeneratorPage() {
               </div>
             </div>
 
-            <div className="flex justify-between items-center mt-4">
-              <div className="flex gap-2">
-                <Button variant="outline" onClick={() => setShowScheduler(true)}>
-                  <Clock className="h-4 w-4 mr-1" />
-                  Programmer
-                </Button>
-                <Button variant="outline">
-                  <Save className="h-4 w-4 mr-1" />
-                  Sauvegarder
-                </Button>
-              </div>
-              <Button>
+            <div className="mt-4">
+              <Button className="w-full">
                 <Send className="h-4 w-4 mr-1" />
-                Envoyer l'email
+                <span className="whitespace-nowrap">Envoyer l'email</span>
               </Button>
             </div>
           </CardContent>

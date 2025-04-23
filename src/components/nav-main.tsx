@@ -1,100 +1,74 @@
-'use client'
-import { ChevronRight, Home, type LucideIcon } from "lucide-react"
-import { Badge } from "@/components/ui/badge";
+"use client"
 
-import {
-  Collapsible,
-  CollapsibleContent,
-  CollapsibleTrigger,
-} from "@/components/ui/collapsible"
+import { MailIcon, PlusCircleIcon, type LucideIcon } from "lucide-react"
+import Link from "next/link"
+import { usePathname } from 'next/navigation'
+
+import { Button } from "@/components/ui/button"
 import {
   SidebarGroup,
-  SidebarGroupLabel,
+  SidebarGroupContent,
   SidebarMenu,
   SidebarMenuButton,
   SidebarMenuItem,
-  SidebarMenuSub,
-  SidebarMenuSubButton,
-  SidebarMenuSubItem,
 } from "@/components/ui/sidebar"
-import Link from "next/link";
 
 export function NavMain({
   items,
-  count,
 }: {
   items: {
     title: string
     url: string
     icon?: LucideIcon
-    isActive?: boolean
-    items?: {
-      title: string
-      url: string
-    }[]
   }[]
-  count?: number
 }) {
+  const pathname = usePathname()
+
   return (
     <SidebarGroup>
-      <SidebarMenu>
-        <SidebarMenuItem>
-          <Link href="/dashboard">
-            <SidebarMenuButton className="w-full">
-              <Home className="size-4 shrink-0" />
-              <span className="truncate font-semibold">Dashboard</span>
-            </SidebarMenuButton>
-          </Link>
-        </SidebarMenuItem>
-      </SidebarMenu>
-      <SidebarGroupLabel>Platform</SidebarGroupLabel>
-      <SidebarMenu>
-        {items.map((item) => (
-          <Collapsible
-            key={item.title}
-            asChild
-            defaultOpen={item.isActive}
-            className="group/collapsible"
-          >
-            <SidebarMenuItem>
-              <CollapsibleTrigger asChild>
-                <SidebarMenuButton tooltip={item.title}>
-                  {item.icon && <item.icon />}
-                  <span>{item.title}</span>
-                  {item.url === '/dashboard/prospect/follow-up' && count !== undefined && (
-                    <Badge
-                      className="ml-2 bg-primary/20 text-red-400 hover:bg-primary/30"
-                    >
-                      {count}
-                    </Badge>
-                  )}
-                  <ChevronRight className="ml-auto transition-transform duration-200 group-data-[state=open]/collapsible:rotate-90" />
+      <SidebarGroupContent className="flex flex-col gap-3">
+        <SidebarMenu>
+        </SidebarMenu>
+        <SidebarMenu>
+          {items.map((item) => {
+            const isActive = pathname === item.url
+            return (
+              <SidebarMenuItem key={item.title}>
+                <SidebarMenuButton 
+                  tooltip={item.title} 
+                  asChild
+                >
+                  <Link 
+                    href={item.url}
+                    className={`
+                      group relative flex items-center gap-3 rounded-lg px-3 py-2.5 transition-all duration-200 sidebar-item-hover
+                      ${isActive 
+                        ? 'bg-[hsl(var(--sidebar-active))] text-[hsl(var(--sidebar-active-text))] font-medium' 
+                        : 'text-[hsl(var(--sidebar-muted))] hover:bg-[hsl(var(--sidebar-accent))] hover:text-[hsl(var(--sidebar-fg))]'
+                      }
+                    `}
+                  >
+                    {item.icon && (
+                      <item.icon 
+                        className={`h-5 w-5 shrink-0
+                          ${isActive 
+                            ? 'text-[hsl(var(--sidebar-highlight))]' 
+                            : 'text-[hsl(var(--sidebar-muted))]'
+                          }
+                        `}
+                      />
+                    )}
+                    <span className="font-medium">{item.title}</span>
+                    {isActive && (
+                      <span className="absolute left-0 top-1/2 h-8 w-1 -translate-y-1/2 rounded-r-full bg-[hsl(var(--sidebar-highlight))]" />
+                    )}
+                  </Link>
                 </SidebarMenuButton>
-              </CollapsibleTrigger>
-              <CollapsibleContent>
-                <SidebarMenuSub>
-                  {item.items?.map((subItem) => (
-                    <SidebarMenuSubItem key={subItem.title}>
-                      <SidebarMenuSubButton asChild>
-                        <a href={subItem.url}>
-                          <span>{subItem.title}</span>
-                          {subItem.url === '/dashboard/prospect/follow-up' && count !== undefined && (
-                            <Badge
-                              className="ml-2 bg-primary/20 text-red-400 hover:bg-primary/30"
-                            >
-                              {count}
-                            </Badge>
-                          )}
-                        </a>
-                      </SidebarMenuSubButton>
-                    </SidebarMenuSubItem>
-                  ))}
-                </SidebarMenuSub>
-              </CollapsibleContent>
-            </SidebarMenuItem>
-          </Collapsible>
-        ))}
-      </SidebarMenu>
+              </SidebarMenuItem>
+            )
+          })}
+        </SidebarMenu>
+      </SidebarGroupContent>
     </SidebarGroup>
   )
 }
