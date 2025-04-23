@@ -1,6 +1,6 @@
 "use client"
 
-import { useState, useEffect } from "react"
+import { useState, useEffect, useRef, useCallback } from "react"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
@@ -19,6 +19,7 @@ import { arrayMove, SortableContext, sortableKeyboardCoordinates, useSortable, v
 import { CSS } from '@dnd-kit/utilities'
 import { cn } from "@/lib/utils"
 import { EmptyState } from "@/components/ui/empty-state"
+import { ToolsAccordion } from "../components/tools-accordion"
 
 // Types
 interface Prospect {
@@ -581,6 +582,14 @@ export default function EmailGeneratorPage() {
   })
   const [activeTab, setActiveTab] = useState<string>("editor")
   const [isPreviewFullscreen, setIsPreviewFullscreen] = useState(false)
+  const [previewDimensions, setPreviewDimensions] = useState({ width: '100%', height: '100%' })
+  const [previewPosition, setPreviewPosition] = useState({ x: 0, y: 0 })
+  const resizingRef = useRef(false)
+  const movingRef = useRef(false)
+  const startPositionRef = useRef({ x: 0, y: 0 })
+  const previewRef = useRef<HTMLDivElement>(null)
+  const initialDimensionsRef = useRef({ width: 0, height: 0 })
+  const initialPositionRef = useRef({ x: 0, y: 0 })
 
   // Sensors pour le drag and drop
   const sensors = useSensors(
@@ -728,16 +737,130 @@ export default function EmailGeneratorPage() {
     setCustomBlocks(prev => prev.filter(block => block.id !== blockId))
   }
 
+  // Fonction pour gérer le redimensionnement
+  const handleResize = useCallback((e: MouseEvent, direction: string) => {
+    if (!resizingRef.current) return
+    
+    const deltaX = e.clientX - startPositionRef.current.x
+    const deltaY = e.clientY - startPositionRef.current.y
+    
+    const newPreviewPosition = { ...previewPosition }
+    const newDimensions = { 
+      width: initialDimensionsRef.current.width, 
+      height: initialDimensionsRef.current.height 
+    }
+    
+    // Redimensionnement horizontal
+    if (direction.includes('right')) {
+      newDimensions.width += deltaX
+    } else if (direction.includes('left')) {
+      newDimensions.width -= deltaX
+      newPreviewPosition.x = initialPositionRef.current.x + deltaX
+    }
+    
+    // Redimensionnement vertical
+    if (direction.includes('bottom')) {
+      newDimensions.height += deltaY
+    } else if (direction.includes('top')) {
+      newDimensions.height -= deltaY
+      newPreviewPosition.y = initialPositionRef.current.y + deltaY
+    }
+    
+    // Vérifier les dimensions minimales
+    const minWidth = 400
+    const minHeight = 500
+    
+    if (newDimensions.width < minWidth) {
+      newDimensions.width = minWidth
+      if (direction.includes('left')) {
+        newPreviewPosition.x = initialPositionRef.current.x + (initialDimensionsRef.current.width - minWidth)
+      }
+    }
+    
+    if (newDimensions.height < minHeight) {
+      newDimensions.height = minHeight
+      if (direction.includes('top')) {
+        newPreviewPosition.y = initialPositionRef.current.y + (initialDimensionsRef.current.height - minHeight)
+      }
+    }
+    
+    setPreviewDimensions({
+      width: `${newDimensions.width}px`,
+      height: `${newDimensions.height}px`
+    })
+    
+    setPreviewPosition(newPreviewPosition)
+  }, [previewPosition])
+  
+  // Fonction pour gérer le début du redimensionnement
+  const handleResizeStart = useCallback((e: React.MouseEvent<HTMLDivElement>, direction: string) => {
+    e.preventDefault()
+    resizingRef.current = true
+    startPositionRef.current = { x: e.clientX, y: e.clientY }
+    
+    // Sauvegarder les dimensions et positions initiales
+    if (previewRef.current) {
+      initialDimensionsRef.current = {
+        width: previewRef.current.offsetWidth,
+        height: previewRef.current.offsetHeight
+      }
+    }
+    initialPositionRef.current = { x: previewPosition.x, y: previewPosition.y }
+    
+    // Ajouter les gestionnaires d'événements pour le redimensionnement
+    document.addEventListener('mousemove', (e) => handleResize(e, direction), false)
+    document.addEventListener('mouseup', handleResizeEnd, false)
+  }, [previewPosition, handleResize])
+  
+  // Fonction pour gérer la fin du redimensionnement
+  const handleResizeEnd = useCallback(() => {
+    resizingRef.current = false
+    document.removeEventListener('mousemove', handleResize as any, false)
+    document.removeEventListener('mouseup', handleResizeEnd, false)
+  }, [handleResize])
+
+  // Fonction pour gérer le début du déplacement
+  const handleMoveStart = useCallback((e: React.MouseEvent<HTMLDivElement>) => {
+    e.preventDefault()
+    movingRef.current = true
+    startPositionRef.current = { x: e.clientX, y: e.clientY }
+    initialPositionRef.current = { x: previewPosition.x, y: previewPosition.y }
+    
+    // Ajouter les gestionnaires d'événements pour le déplacement
+    document.addEventListener('mousemove', handleMove, false)
+    document.addEventListener('mouseup', handleMoveEnd, false)
+  }, [previewPosition])
+  
+  // Fonction pour gérer le déplacement
+  const handleMove = useCallback((e: MouseEvent) => {
+    if (!movingRef.current) return
+    
+    const deltaX = e.clientX - startPositionRef.current.x
+    const deltaY = e.clientY - startPositionRef.current.y
+    
+    setPreviewPosition({
+      x: initialPositionRef.current.x + deltaX,
+      y: initialPositionRef.current.y + deltaY
+    })
+  }, [])
+  
+  // Fonction pour gérer la fin du déplacement
+  const handleMoveEnd = useCallback(() => {
+    movingRef.current = false
+    document.removeEventListener('mousemove', handleMove, false)
+    document.removeEventListener('mouseup', handleMoveEnd, false)
+  }, [handleMove])
+
   return (
     <div className="h-[calc(100vh-4rem)] flex flex-col bg-neutral-100 dark:bg-neutral-900">
       {/* Header */}
       <div className="px-4 py-3 border-b bg-background backdrop-blur-sm">
         <div className="flex items-center justify-between">
           <div className="flex items-center gap-2">
-            <div className="h-8 w-8 rounded-lg bg-neutral-100 dark:bg-neutral-900  flex items-center justify-center">
-              <Mail className="h-4 w-4 " />
+            <div className="h-8 w-8 rounded-lg bg-neutral-100 dark:bg-neutral-900 flex items-center justify-center">
+              <Mail className="h-4 w-4" />
             </div>
-            <h1 className="text-xl font-semibold ">
+            <h1 className="text-xl font-semibold">
               Générer un email
             </h1>
           </div>
@@ -755,340 +878,279 @@ export default function EmailGeneratorPage() {
       </div>
 
       {/* Main Content */}
-      <div className="flex-1 grid grid-cols-3 gap-4 p-4 overflow-hidden">
-        {/* Left Column - Editor */}
-        <div className="flex flex-col gap-4 overflow-hidden">
-          {/* Configuration Card */}
-          <Card className="flex-1 overflow-hidden border-primary/10 shadow-lg">
-            <CardHeader className="border-b bg-gray-950">
-              <div className="flex items-center justify-between">
-                <div className="flex items-center space-x-2">
-                  <div className="h-8 w-8 rounded-lg bg-primary/10 flex items-center justify-center">
-                    <Settings className="h-4 w-4 text-primary" />
-                  </div>
-                  <CardTitle className="text-primary">Configuration</CardTitle>
-                </div>
-                <Button
-                  variant="ghost"
-                  size="sm"
-                  onClick={() => window.location.href = '/dashboard/prospect/nouveau'}
-                  className="hover:bg-primary/10"
-                >
-                  <UserPlus className="h-4 w-4 mr-1 text-primary/70" />
-                  Nouveau prospect
-                </Button>
-              </div>
-            </CardHeader>
-            <CardContent className="p-4 space-y-4 overflow-y-auto">
-              {/* Prospect Selection */}
-              <div className="space-y-2">
-                <Label htmlFor="prospect" className="flex items-center gap-2">
-                  Sélectionner un prospect
-                  {!selectedProspect && !manualProspect && (
-                    <Badge variant="destructive" className="text-xs">Requis</Badge>
-                  )}
-                </Label>
-                <Select onValueChange={(value) => {
-                  const prospect = SAMPLE_PROSPECTS.find(p => p.id.toString() === value)
-                  setSelectedProspect(prospect || null)
-                  if (prospect) {
-                    setManualProspect({
-                      prenom: '',
-                      email: '',
-                      date_proposition: ''
-                    })
-                  }
-                }}>
-                  <SelectTrigger>
-                    <SelectValue placeholder="Choisir un prospect" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    {SAMPLE_PROSPECTS.map((prospect) => (
-                      <SelectItem key={prospect.id} value={prospect.id.toString()}>
-                        {prospect.prenom} ({prospect.email})
-                      </SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
-              </div>
-
-              {/* Prospect Details */}
-              <div className="grid grid-cols-2 gap-4">
-                <div className="space-y-2">
-                  <Label htmlFor="prenom" className="flex items-center gap-2">
-                    Prénom
-                    {!selectedProspect?.prenom && !manualProspect.prenom && (
-                      <Badge variant="secondary" className="text-xs">Requis</Badge>
-                    )}
-                  </Label>
-                  <Input
-                    id="prenom"
-                    type="text"
-                    placeholder="Prénom du prospect"
-                    value={selectedProspect?.prenom || manualProspect.prenom}
-                    onChange={(e) => {
-                      if (!selectedProspect) {
-                        setManualProspect(prev => ({ ...prev, prenom: e.target.value }))
-                      }
-                    }}
-                    disabled={!!selectedProspect}
-                  />
-                </div>
-                <div className="space-y-2">
-                  <Label htmlFor="email" className="flex items-center gap-2">
-                    Email
-                    {!selectedProspect?.email && !manualProspect.email && (
-                      <Badge variant="secondary" className="text-xs">Requis</Badge>
-                    )}
-                  </Label>
-                  <Input
-                    id="email"
-                    type="email"
-                    placeholder="Email du prospect"
-                    value={selectedProspect?.email || manualProspect.email}
-                    onChange={(e) => {
-                      if (!selectedProspect) {
-                        setManualProspect(prev => ({ ...prev, email: e.target.value }))
-                      }
-                    }}
-                    disabled={!!selectedProspect}
-                  />
-                </div>
-              </div>
-
-              <div className="space-y-2">
-                <Label htmlFor="date_proposition" className="flex items-center gap-2">
-                  Date de proposition
-                  {!selectedProspect?.date_proposition && !manualProspect.date_proposition && (
-                    <Badge variant="secondary" className="text-xs">Requis</Badge>
-                  )}
-                </Label>
-                <Input
-                  id="date_proposition"
-                  type="text"
-                  placeholder="Ex: la semaine prochaine"
-                  value={selectedProspect?.date_proposition || manualProspect.date_proposition}
-                  onChange={(e) => {
-                    if (selectedProspect) {
-                      setSelectedProspect({
-                        ...selectedProspect,
-                        date_proposition: e.target.value
-                      })
-                    } else {
-                      setManualProspect(prev => ({ ...prev, date_proposition: e.target.value }))
-                    }
-                  }}
-                />
-              </div>
-
-              {/* Template Selection */}
-              <div className="space-y-2">
-                <div className="flex items-center justify-between">
-                  <Label htmlFor="template" className="flex items-center gap-2">
-                    Template d'email
-                    {!selectedTemplate && (
-                      <Badge variant="secondary" className="text-xs">Requis</Badge>
-                    )}
-                  </Label>
-                  <Button
-                    variant="ghost"
-                    size="sm"
-                    onClick={() => setShowNewTemplateModal(true)}
-                  >
-                    <FileText className="h-4 w-4 mr-1" />
-                    Nouveau template
-                  </Button>
-                </div>
-                <Select onValueChange={(value) => {
-                  const template = [...DEFAULT_TEMPLATES, ...customTemplates].find(t => t.id.toString() === value)
-                  setSelectedTemplate(template || null)
-                }}>
-                  <SelectTrigger>
-                    <SelectValue placeholder="Choisir un template" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    {[...DEFAULT_TEMPLATES, ...customTemplates].map((template) => (
-                      <SelectItem key={template.id} value={template.id.toString()}>
-                        <div className="flex items-center justify-between">
-                          <span>{template.name}</span>
-                          {template.isCustom && (
-                            <Badge variant="secondary" className="ml-2">Personnalisé</Badge>
-                          )}
-                        </div>
-                      </SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
-              </div>
-
-              {/* Subject */}
-              <div className="space-y-2">
-                <Label htmlFor="subject" className="flex items-center gap-2">
-                  Objet de l'email
-                  {!emailSubject && !selectedTemplate?.name && (
-                    <Badge variant="secondary" className="text-xs">Requis</Badge>
-                  )}
-                </Label>
-                <Input
-                  id="subject"
-                  placeholder="Entrez l'objet de l'email"
-                  value={emailSubject}
-                  onChange={(e) => setEmailSubject(e.target.value)}
-                />
-              </div>
-            </CardContent>
-          </Card>
-        </div>
-
-        {/* Middle Column - Suggestions */}
-        <div className="flex flex-col gap-4 overflow-hidden">
-          {/* Suggestions Card */}
-          <Card className="flex-1 overflow-hidden border-primary/10 shadow-lg">
-            <CardHeader className="border-b bg-primary/5">
-              <div className="flex items-center justify-between">
-                <div className="flex items-center space-x-2">
-                  <div className="h-8 w-8 rounded-lg bg-primary/10 flex items-center justify-center">
-                    <Wand2 className="h-4 w-4 text-primary" />
-                  </div>
-                  <CardTitle className="text-primary/90">Suggestions IA</CardTitle>
-                </div>
-                <Button 
-                  variant="ghost" 
-                  size="sm" 
-                  onClick={generateNewSuggestions}
-                  className="hover:bg-primary/10"
-                >
-                  <Sparkles className="h-4 w-4 mr-1 text-primary/70" />
-                  Générer
-                </Button>
-              </div>
-            </CardHeader>
-            <CardContent className="p-4">
-              <div className="flex flex-wrap gap-2 mb-4">
-                <Badge
-                  variant={selectedSuggestionCategory === 'all' ? "default" : "secondary"}
-                  className="cursor-pointer hover:bg-primary/10 transition-colors"
-                  onClick={() => filterSuggestionsByCategory('all')}
-                >
-                  Toutes
-                </Badge>
-                {[
-                  { value: 'introduction', label: 'Introduction' },
-                  { value: 'accroche', label: 'Accroche' },
-                  { value: 'valorisation', label: 'Valorisation' },
-                  { value: 'transition', label: 'Transition' },
-                  { value: 'proposition', label: 'Proposition' },
-                  { value: 'benefices', label: 'Bénéfices' },
-                  { value: 'objection', label: 'Objection' },
-                  { value: 'conclusion', label: 'Conclusion' }
-                ].map((category) => (
-                  <Badge
-                    key={category.value}
-                    variant={selectedSuggestionCategory === category.value ? "default" : "secondary"}
-                    className="cursor-pointer hover:bg-primary/10 transition-colors"
-                    onClick={() => filterSuggestionsByCategory(category.value)}
-                  >
-                    {category.label}
-                  </Badge>
-                ))}
-              </div>
-              <ScrollArea className="h-[calc(100vh-24rem)]">
-                <div className="space-y-2">
-                  {suggestions.map((suggestion) => (
-                    <Button
-                      key={suggestion.id}
-                      variant="outline"
-                      className="w-full justify-start text-left whitespace-normal h-auto py-3 hover:bg-primary/5 transition-colors"
-                      onClick={() => {
-                        const newBlock = {
-                          id: `suggestion-${Date.now()}`,
-                          content: suggestion.text,
-                          type: 'custom' as const
-                        }
-                        setTextBlocks(prev => [...prev, newBlock])
-                      }}
-                    >
-                      <MessageSquare className="h-4 w-4 mr-1 shrink-0 text-primary/70" />
-                      <span className="line-clamp-2">{suggestion.text}</span>
-                    </Button>
-                  ))}
-                </div>
-              </ScrollArea>
-            </CardContent>
-          </Card>
+      <div className="flex-1 grid grid-cols-12 gap-4 overflow-hidden">
+        {/* Left Column - Tools Accordion */}
+        <div className="col-span-3 h-full">
+          <ToolsAccordion />
         </div>
 
         {/* Right Column - Preview */}
-        <Card className="flex flex-col overflow-hidden border-primary/10 shadow-lg">
-          <CardHeader className="border-b bg-primary/5">
-            <div className="flex items-center justify-between">
-              <div className="flex items-center space-x-2">
-                <div className="h-8 w-8 rounded-lg bg-primary/10 flex items-center justify-center">
-                  <Mail className="h-4 w-4 text-primary" />
+        <div className="col-span-9 h-full flex items-center justify-center overflow-auto relative">
+          {/* Arrière-plan avec motif de points */}
+          <div 
+            className="absolute inset-0 z-0"
+            style={{ 
+              backgroundImage: 'radial-gradient(circle, #d1d5db 1px, transparent 1px)',
+              backgroundSize: '20px 20px',
+              backgroundPosition: '0 0',
+              opacity: 0.5
+            }}
+          />
+          <div 
+            ref={previewRef}
+            className="absolute"
+            style={{ 
+              width: previewDimensions.width, 
+              height: previewDimensions.height,
+              maxWidth: '100%', 
+              maxHeight: '100%',
+              minWidth: '400px',
+              minHeight: '500px',
+              transform: `translate(${previewPosition.x}px, ${previewPosition.y}px)`,
+              zIndex: movingRef.current ? 20 : 10,
+              boxShadow: movingRef.current ? '0 8px 30px rgba(0,0,0,0.12)' : '0 2px 10px rgba(0,0,0,0.05)'
+            }}
+          >
+            <Card className="h-full flex flex-col overflow-hidden border-blue-100">
+              <CardHeader 
+                className="border-b bg-blue-50/50 py-3 px-4 cursor-move"
+                onMouseDown={handleMoveStart}
+              >
+                <div className="flex items-center justify-between">
+                  <div className="flex items-center gap-2">
+                    <CardTitle className="text-sm font-medium text-neutral-800">Prévisualisation</CardTitle>
+                  </div>
+                  <div className="flex items-center gap-1">
+                    <TooltipProvider>
+                      <Tooltip>
+                        <TooltipTrigger asChild>
+                          <Button
+                            variant="ghost"
+                            size="sm"
+                            className="h-8 w-8 p-0 hover:bg-blue-100 hover:text-blue-600"
+                          >
+                            <Wand2 className="h-4 w-4" />
+                          </Button>
+                        </TooltipTrigger>
+                        <TooltipContent>
+                          <p>Améliorer avec l'IA</p>
+                        </TooltipContent>
+                      </Tooltip>
+                    
+                      <Tooltip>
+                        <TooltipTrigger asChild>
+                          <Button
+                            variant="ghost"
+                            size="sm"
+                            onClick={() => setShowScheduler(true)}
+                            className="h-8 w-8 p-0 hover:bg-blue-100 hover:text-blue-600"
+                          >
+                            <Clock className="h-4 w-4" />
+                          </Button>
+                        </TooltipTrigger>
+                        <TooltipContent>
+                          <p>Programmer l'envoi</p>
+                        </TooltipContent>
+                      </Tooltip>
+                    
+                      <Tooltip>
+                        <TooltipTrigger asChild>
+                          <Button
+                            variant="ghost"
+                            size="sm"
+                            onClick={() => setIsPreviewFullscreen(!isPreviewFullscreen)}
+                            className="h-8 w-8 p-0 hover:bg-blue-100 hover:text-blue-600"
+                          >
+                            {isPreviewFullscreen ? <Minimize2 className="h-4 w-4" /> : <Maximize2 className="h-4 w-4" />}
+                          </Button>
+                        </TooltipTrigger>
+                        <TooltipContent>
+                          <p>{isPreviewFullscreen ? "Réduire" : "Agrandir"} la prévisualisation</p>
+                        </TooltipContent>
+                      </Tooltip>
+                    </TooltipProvider>
+                  </div>
                 </div>
-                <CardTitle className="text-primary/90">Prévisualisation</CardTitle>
-              </div>
-              <div className="flex items-center gap-2">
-                <Button
-                  variant="ghost"
-                  size="sm"
-                  onClick={() => setShowScheduler(true)}
-                  className="hover:bg-primary/10"
-                >
-                  <Clock className="h-4 w-4 mr-1 text-primary/70" />
-                  Programmer
-                </Button>
-                <Button
-                  variant="ghost"
-                  size="sm"
-                  onClick={() => setIsPreviewFullscreen(!isPreviewFullscreen)}
-                  className="hover:bg-primary/10"
-                >
-                  {isPreviewFullscreen ? <Minimize2 className="h-4 w-4 text-primary/70" /> : <Maximize2 className="h-4 w-4 text-primary/70" />}
-                </Button>
-              </div>
-            </div>
-          </CardHeader>
-          <CardContent className="flex-1 p-4 overflow-y-auto">
-            <div className="border rounded-lg shadow-sm">
-              <div className="p-4 bg-primary/5 border-b rounded-t-lg">
-                <div className="space-y-1">
-                  <div className="text-sm font-medium text-primary/90">À: {(selectedProspect || manualProspect)?.email || '[Email]'}</div>
-                  <div className="text-sm text-muted-foreground">Objet: {emailSubject || selectedTemplate?.name || '[Objet]'}</div>
-                </div>
-              </div>
-              <div className="p-4">
-                <DndContext sensors={sensors} collisionDetection={closestCenter} onDragEnd={handleDragEnd}>
-                  <SortableContext items={textBlocks.map(block => block.id)} strategy={verticalListSortingStrategy}>
-                    <div className="space-y-4">
-                      {textBlocks.map((block) => (
-                        <SortableTextBlock
-                          key={block.id}
-                          block={block}
-                          onRemove={removeBlock}
-                          onUpdate={(id, content) => {
-                            setTextBlocks(prev =>
-                              prev.map(b =>
-                                b.id === id ? { ...b, content } : b
-                              )
-                            )
-                          }}
-                        />
-                      ))}
+              </CardHeader>
+              
+              <CardContent className="flex-1 p-4 overflow-y-auto">
+                <div className="border rounded-lg shadow-sm mb-4">
+                  <div className="p-3 bg-blue-50/50 border-b rounded-t-lg">
+                    <div className="space-y-1">
+                      <div className="text-sm font-medium text-neutral-800">À: {(selectedProspect || manualProspect)?.email || '[Email]'}</div>
+                      <div className="text-xs text-neutral-500">Objet: {emailSubject || selectedTemplate?.name || '[Objet]'}</div>
                     </div>
-                  </SortableContext>
-                </DndContext>
-              </div>
-            </div>
+                  </div>
+                  
+                  <div className="p-4">
+                    <DndContext sensors={sensors} collisionDetection={closestCenter} onDragEnd={handleDragEnd}>
+                      <SortableContext items={textBlocks.map(block => block.id)} strategy={verticalListSortingStrategy}>
+                        <div 
+                          className="space-y-3 min-h-[250px] relative border-2 border-dashed border-transparent hover:border-blue-200 transition-colors rounded-md p-2"
+                          onDragOver={(e) => {
+                            e.preventDefault();
+                            e.currentTarget.classList.add('border-blue-300', 'bg-blue-50/30');
+                          }}
+                          onDragLeave={(e) => {
+                            e.currentTarget.classList.remove('border-blue-300', 'bg-blue-50/30');
+                          }}
+                          onDrop={(e) => {
+                            e.preventDefault();
+                            e.currentTarget.classList.remove('border-blue-300', 'bg-blue-50/30');
+                            const text = e.dataTransfer.getData("text/plain");
+                            if (text) {
+                              const newBlock = {
+                                id: `custom-${Date.now()}`,
+                                content: text,
+                                type: 'custom' as const
+                              };
+                              setTextBlocks(prev => [...prev, newBlock]);
+                            }
+                          }}
+                        >
+                          {textBlocks.length === 0 && (
+                            <div className="absolute inset-0 flex items-center justify-center">
+                              <div className="text-center text-neutral-400">
+                                <Mail className="h-10 w-10 mx-auto mb-2 opacity-20" />
+                                <p className="text-xs">Glissez du contenu ici ou sélectionnez un template</p>
+                              </div>
+                            </div>
+                          )}
+                          {textBlocks.map((block) => (
+                            <SortableTextBlock
+                              key={block.id}
+                              block={block}
+                              onRemove={removeBlock}
+                              onUpdate={(id, content) => {
+                                setTextBlocks(prev =>
+                                  prev.map(b =>
+                                    b.id === id ? { ...b, content } : b
+                                  )
+                                )
+                              }}
+                            />
+                          ))}
+                        </div>
+                      </SortableContext>
+                    </DndContext>
+                  </div>
+                </div>
 
-            <div className="mt-4">
-              <Button className="w-full">
-                <Send className="h-4 w-4 mr-1" />
-                <span className="whitespace-nowrap">Envoyer l'email</span>
-              </Button>
-            </div>
-          </CardContent>
-        </Card>
+                <Button className="w-full bg-blue-600 hover:bg-blue-700 h-9 text-sm">
+                  <Send className="h-4 w-4 mr-1.5" />
+                  Envoyer l'email
+                </Button>
+              </CardContent>
+            </Card>
+            
+            {/* Poignées de redimensionnement */}
+            {/* Coin inférieur droit */}
+            <div 
+              className="absolute bottom-0 right-0 w-4 h-4 cursor-se-resize z-10 hover:opacity-80"
+              onMouseDown={(e) => handleResizeStart(e, 'right-bottom')}
+              style={{
+                background: 'transparent',
+                border: '2px solid #3b82f6',
+                borderLeft: 'none',
+                borderTop: 'none',
+                opacity: 0.4,
+                borderBottomRightRadius: '3px'
+              }}
+            />
+            
+            {/* Coin supérieur droit */}
+            <div 
+              className="absolute top-0 right-0 w-4 h-4 cursor-ne-resize z-10 hover:opacity-80"
+              onMouseDown={(e) => handleResizeStart(e, 'right-top')}
+              style={{
+                background: 'transparent',
+                border: '2px solid #3b82f6',
+                borderLeft: 'none',
+                borderBottom: 'none',
+                opacity: 0.4,
+                borderTopRightRadius: '3px'
+              }}
+            />
+            
+            {/* Coin inférieur gauche */}
+            <div 
+              className="absolute bottom-0 left-0 w-4 h-4 cursor-sw-resize z-10 hover:opacity-80"
+              onMouseDown={(e) => handleResizeStart(e, 'left-bottom')}
+              style={{
+                background: 'transparent',
+                border: '2px solid #3b82f6',
+                borderRight: 'none',
+                borderTop: 'none',
+                opacity: 0.4,
+                borderBottomLeftRadius: '3px'
+              }}
+            />
+            
+            {/* Coin supérieur gauche */}
+            <div 
+              className="absolute top-0 left-0 w-4 h-4 cursor-nw-resize z-10 hover:opacity-80"
+              onMouseDown={(e) => handleResizeStart(e, 'left-top')}
+              style={{
+                background: 'transparent',
+                border: '2px solid #3b82f6',
+                borderRight: 'none',
+                borderBottom: 'none',
+                opacity: 0.4,
+                borderTopLeftRadius: '3px'
+              }}
+            />
+            
+            {/* Bord droit */}
+            <div 
+              className="absolute right-0 top-1/2 -translate-y-1/2 w-1.5 h-16 cursor-e-resize z-10 hover:opacity-80"
+              onMouseDown={(e) => handleResizeStart(e, 'right')}
+              style={{
+                background: '#3b82f6',
+                opacity: 0.2,
+                borderRadius: '1px'
+              }}
+            />
+            
+            {/* Bord gauche */}
+            <div 
+              className="absolute left-0 top-1/2 -translate-y-1/2 w-1.5 h-16 cursor-w-resize z-10 hover:opacity-80"
+              onMouseDown={(e) => handleResizeStart(e, 'left')}
+              style={{
+                background: '#3b82f6',
+                opacity: 0.2,
+                borderRadius: '1px'
+              }}
+            />
+            
+            {/* Bord inférieur */}
+            <div 
+              className="absolute bottom-0 left-1/2 -translate-x-1/2 h-1.5 w-16 cursor-s-resize z-10 hover:opacity-80"
+              onMouseDown={(e) => handleResizeStart(e, 'bottom')}
+              style={{
+                background: '#3b82f6',
+                opacity: 0.2,
+                borderRadius: '1px'
+              }}
+            />
+            
+            {/* Bord supérieur */}
+            <div 
+              className="absolute top-0 left-1/2 -translate-x-1/2 h-1.5 w-16 cursor-n-resize z-10 hover:opacity-80"
+              onMouseDown={(e) => handleResizeStart(e, 'top')}
+              style={{
+                background: '#3b82f6',
+                opacity: 0.2,
+                borderRadius: '1px'
+              }}
+            />
+          </div>
+
+          {/* Indicateur de position et dimensions */}
+          <div className="absolute bottom-3 right-3 bg-white dark:bg-neutral-800 px-2 py-1 rounded text-xs opacity-70 z-30">
+            {Math.round(parseFloat(previewDimensions.width.toString()))}px × 
+            {Math.round(parseFloat(previewDimensions.height.toString()))}px
+          </div>
+        </div>
       </div>
 
       {/* Modals */}
