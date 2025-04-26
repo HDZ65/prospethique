@@ -6,7 +6,7 @@ import { Button } from "@/components/ui/button"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 import { Separator } from "@/components/ui/separator"
 import { Label } from "@/components/ui/label"
-import { Send, Clock, Plus, Linkedin, Sparkles, Calendar, MessageSquare, History, BarChart, Save, Settings, UserPlus, FileText, Mail, PenLine, GripVertical, X, Maximize2, Minimize2, Wand2, CheckCircle } from "lucide-react"
+import { Send, Clock, Plus, Linkedin, Sparkles, Calendar, MessageSquare, History, BarChart, Save, Settings, UserPlus, FileText, Mail, PenLine, GripVertical, X, Maximize2, Minimize2, Wand2, CheckCircle, Box } from "lucide-react"
 import { Input } from "@/components/ui/input"
 import { Textarea } from "@/components/ui/textarea"
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
@@ -14,192 +14,35 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger, Dialog
 import { Badge } from "@/components/ui/badge"
 import { ScrollArea } from "@/components/ui/scroll-area"
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip"
-import { DndContext, closestCenter, KeyboardSensor, PointerSensor, useSensor, useSensors } from '@dnd-kit/core'
+import { DndContext, closestCenter, KeyboardSensor, PointerSensor, useSensor, useSensors, DragOverlay, DragStartEvent, DragEndEvent, UniqueIdentifier } from '@dnd-kit/core'
 import { arrayMove, SortableContext, sortableKeyboardCoordinates, useSortable, verticalListSortingStrategy } from '@dnd-kit/sortable'
 import { CSS } from '@dnd-kit/utilities'
 import { cn } from "@/lib/utils"
 import { EmptyState } from "@/components/ui/empty-state"
-import { ToolsAccordion } from "../components/tools-accordion"
+import { ToolsAccordion } from "./components/tools-accordion"
+import { SortableTextBlock } from "./components/SortableTextBlock"
+import { EmailPreview } from "./components/EmailPreview"
+import { NewTemplateDialog } from "./components/NewTemplateDialog"
+import { HistoryDialog } from "./components/HistoryDialog"
+import { StatsDialog } from "./components/StatsDialog"
+import { 
+  Prospect, 
+  Template, 
+  LinkedInData, 
+  Suggestion, 
+  ScheduledEmail, 
+  EmailHistory, 
+  TextBlock 
+} from "./types"
+import { EmailCanvas } from "./components/email-canvas"
 
-// Types
-interface Prospect {
-  id: number
-  prenom: string
-  email: string
-  date_proposition?: string
-  notes?: string
-  linkedInData?: LinkedInData
-}
-
-interface Template {
-  id: number
-  name: string
-  content: string
-  category: 'commercial' | 'event' | 'followup' | 'other' | 'relance' | 'remerciement' | 'invitation' | 'presentation' | 'devis' | 'newsletter'
-  description?: string
-  isCustom?: boolean
-  createdAt?: Date
-  updatedAt?: Date
-}
-
-interface LinkedInData {
-  profileUrl: string
-  derniereSynchronisation: Date
-  activites: {
-    type: 'post' | 'like' | 'comment' | 'share'
-    date: Date
-    contenu: string
-  }[]
-  opportunites: {
-    type: 'promotion' | 'nouveau_poste' | 'publication'
-    date: Date
-    description: string
-  }[]
-}
-
-interface Suggestion {
-  id: string
-  text: string
-  category: 'introduction' | 'valorisation' | 'proposition' | 'conclusion' | 'relance' | 'remerciement' | 'accroche' | 'transition' | 'objection' | 'benefices'
-}
-
-interface ScheduledEmail {
-  id: string
-  content: string
-  recipient: string
-  scheduledDate: Date
-  status: 'pending' | 'sent' | 'failed'
-}
-
-interface EmailHistory {
-  id: string
-  recipient: string
-  subject: string
-  content: string
-  sentAt: Date
-  status: 'sent' | 'failed'
-  engagement?: {
-    opened: boolean
-    clicked: boolean
-    replied: boolean
-    openedAt?: Date
-    clickedAt?: Date
-    repliedAt?: Date
-  }
-}
-
-interface TextBlock {
-  id: string
-  content: string
-  type: 'template' | 'custom'
-}
-
-interface SortableTextBlockProps {
-  block: TextBlock
-  onRemove?: (id: string) => void
-  onUpdate?: (id: string, content: string) => void
-}
-
-function SortableTextBlock({ block, onRemove, onUpdate }: SortableTextBlockProps) {
-  const [isEditing, setIsEditing] = useState(false)
-  const [tempContent, setTempContent] = useState(block.content)
-
-  const {
-    attributes,
-    listeners,
-    setNodeRef,
-    transform,
-    transition,
-    isDragging
-  } = useSortable({ id: block.id })
-
-  const style = {
-    transform: CSS.Transform.toString(transform),
-    transition,
-    backgroundColor: block.type === 'custom' ? 'var(--accent)' : 'transparent',
-    opacity: isDragging ? 0.5 : 1
-  }
-
-  const handleSave = () => {
-    onUpdate?.(block.id, tempContent)
-    setIsEditing(false)
-  }
-
-  const handleCancel = () => {
-    setTempContent(block.content)
-    setIsEditing(false)
-  }
-
-  return (
-    <div
-      ref={setNodeRef}
-      style={style}
-      className={cn(
-        "relative group rounded-md p-3 border",
-        block.type === 'custom' ? 'bg-accent/50' : 'bg-background',
-        isDragging ? 'cursor-grabbing' : 'cursor-grab'
-      )}
-      {...attributes}
-    >
-      <div className="absolute left-2 top-1/2 -translate-y-1/2 opacity-0 group-hover:opacity-100 transition-opacity">
-        <Button variant="ghost" size="sm" className="h-8 w-8 p-0" {...listeners}>
-          <GripVertical className="h-4 w-4" />
-        </Button>
-      </div>
-      <div className="absolute right-2 top-1/2 -translate-y-1/2 opacity-0 group-hover:opacity-100 transition-opacity flex gap-1">
-        {isEditing ? (
-          <>
-            <Button
-              variant="ghost"
-              size="sm"
-              onClick={handleSave}
-              className="h-8 w-8 p-0 hover:bg-green-100 hover:text-green-600"
-            >
-              <CheckCircle className="h-4 w-4" />
-            </Button>
-            <Button
-              variant="ghost"
-              size="sm"
-              onClick={handleCancel}
-              className="h-8 w-8 p-0 hover:bg-red-100 hover:text-red-600"
-            >
-              <X className="h-4 w-4" />
-            </Button>
-          </>
-        ) : (
-          <>
-            <Button
-              variant="ghost"
-              size="sm"
-              onClick={() => setIsEditing(true)}
-              className="h-8 w-8 p-0"
-            >
-              <PenLine className="h-4 w-4" />
-            </Button>
-            <Button
-              variant="ghost"
-              size="sm"
-              onClick={() => onRemove?.(block.id)}
-              className="h-8 w-8 p-0"
-            >
-              <X className="h-4 w-4" />
-            </Button>
-          </>
-        )}
-      </div>
-      <div className="px-8">
-        {isEditing ? (
-          <Textarea
-            value={tempContent}
-            onChange={(e) => setTempContent(e.target.value)}
-            className="min-h-[100px] resize-none border-none focus-visible:ring-0 p-0 shadow-none"
-          />
-        ) : (
-          <div className="whitespace-pre-wrap text-sm leading-relaxed">{block.content}</div>
-        )}
-      </div>
-    </div>
-  )
+// Interface pour les blocs MJML (peut être déplacée dans types/index.ts plus tard)
+interface MjmlBlock {
+  id: string;
+  type: string; // ex: 'mj-section', 'mj-text', 'mj-button'
+  attributes?: Record<string, any>;
+  content?: string;
+  children?: MjmlBlock[];
 }
 
 // Données temporaires
@@ -499,34 +342,26 @@ const ALL_SUGGESTIONS: Suggestion[] = [
 
 const SAMPLE_PROSPECTS: Prospect[] = [
   {
-    id: 1,
-    prenom: 'Jean',
-    email: 'jean@techsolutions.com',
-    notes: 'Intéressé par nos services cloud',
-    linkedInData: {
-      profileUrl: 'https://linkedin.com/in/jean',
-      derniereSynchronisation: new Date(),
-      activites: [
-        {
-          type: 'post',
-          date: new Date(),
-          contenu: 'Nouvelle stratégie commerciale pour 2024'
-        }
-      ],
-      opportunites: [
-        {
-          type: 'nouveau_poste',
-          date: new Date(),
-          description: 'Promotion au poste de Directeur Commercial'
-        }
-      ]
-    }
+    id: "1",
+    prenom: "Marie",
+    nom: "Dubois",
+    email: "marie.dubois@entreprise.com",
+    poste: "Directrice Marketing",
+    entreprise: "Entreprise A",
+    telephone: "+33 6 12 34 56 78",
+    createdAt: new Date("2024-01-15"),
+    updatedAt: new Date("2024-01-15")
   },
   {
-    id: 2,
-    prenom: 'Marie',
-    email: 'marie@innovationlabs.com',
-    notes: 'À recontacter pour présentation détaillée'
+    id: "2",
+    prenom: "Thomas",
+    nom: "Martin",
+    email: "thomas.martin@societe.fr",
+    poste: "Responsable Commercial",
+    entreprise: "Société B",
+    telephone: "+33 6 98 76 54 32",
+    createdAt: new Date("2024-01-16"),
+    updatedAt: new Date("2024-01-16")
   }
 ]
 
@@ -536,8 +371,7 @@ const SAMPLE_EMAIL_HISTORY: EmailHistory[] = [
     recipient: 'jean@techsolutions.com',
     subject: 'Première prise de contact',
     content: 'Bonjour Jean...',
-    sentAt: new Date(),
-    status: 'sent',
+    sentDate: new Date(),
     engagement: {
       opened: true,
       clicked: true,
@@ -568,10 +402,7 @@ export default function EmailGeneratorPage() {
     content: ''
   })
   const [selectedSuggestionCategory, setSelectedSuggestionCategory] = useState<string>('all')
-  const [suggestions, setSuggestions] = useState<Suggestion[]>(() => {
-    const shuffled = [...ALL_SUGGESTIONS].sort(() => Math.random() - 0.5)
-    return shuffled.slice(0, 8)
-  })
+  const [suggestions, setSuggestions] = useState<Suggestion[]>(ALL_SUGGESTIONS)
   const [customBlocks, setCustomBlocks] = useState<Array<{ id: string; content: string }>>([])
   const [currentCustomText, setCurrentCustomText] = useState("")
   const [textBlocks, setTextBlocks] = useState<TextBlock[]>([])
@@ -590,8 +421,11 @@ export default function EmailGeneratorPage() {
   const previewRef = useRef<HTMLDivElement>(null)
   const initialDimensionsRef = useRef({ width: 0, height: 0 })
   const initialPositionRef = useRef({ x: 0, y: 0 })
+  const [activeId, setActiveId] = useState<UniqueIdentifier | null>(null);
+  const [emailBlocks, setEmailBlocks] = useState<TextBlock[]>([])
+  const [mjmlBlocks, setMjmlBlocks] = useState<MjmlBlock[]>([])
 
-  // Sensors pour le drag and drop
+  // Sensors for drag and drop
   const sensors = useSensors(
     useSensor(PointerSensor),
     useSensor(KeyboardSensor, {
@@ -599,26 +433,132 @@ export default function EmailGeneratorPage() {
     })
   )
 
-  // Fonction pour supprimer un bloc
+  // Handlers
   const removeBlock = (blockId: string) => {
-    setTextBlocks(prev => prev.filter(block => block.id !== blockId))
+    setTextBlocks(blocks => blocks.filter(block => block.id !== blockId))
+  }
+
+  const handleDragStart = (event: DragStartEvent) => {
+    setActiveId(event.active.id);
+  };
+
+  const handleDragEnd = (event: DragEndEvent) => {
+    const { active, over } = event;
+    setActiveId(null);
+
+    if (!over) {
+      return;
+    }
+
+    const activeData = active.data.current;
+    const overId = over.id;
+
+    // Cas 1: Déposer un composant MJML sur la prévisualisation
+    if (overId === 'email-preview-content' && activeData?.source === 'mjml-tool') {
+      console.log("Dropped MJML tool on Preview:", activeData);
+      const newBlock: MjmlBlock = {
+        id: `mjml-${Date.now()}`,
+        type: activeData.type,
+        attributes: { ...activeData.defaultAttributes }, // Utiliser les attributs par défaut si fournis
+      };
+
+      // Gérer les colonnes pour les sections
+      if (newBlock.type === 'mj-section' && activeData.columns) {
+        newBlock.children = Array.from({ length: activeData.columns }).map((_, i) => ({
+          id: `mjml-col-${Date.now()}-${i}`,
+          type: 'mj-column',
+          children: [],
+        }));
+      } else if (newBlock.type === 'mj-text') {
+        newBlock.content = activeData.content || "Texte par défaut"; // Contenu par défaut pour mj-text
+      } else if (newBlock.type === 'mj-button') {
+        newBlock.content = activeData.content || "Bouton"; // Contenu par défaut pour mj-button
+        newBlock.attributes = { ...newBlock.attributes, href: '#' }; // Attribut href par défaut
+      }
+
+      // TODO: Logique plus avancée pour insérer à la bonne position si nécessaire
+      setMjmlBlocks((prevBlocks) => [...prevBlocks, newBlock]);
+      return;
+    }
+
+    // Cas 2: Déposer une suggestion sur la prévisualisation
+    if (overId === 'email-preview-content' && activeData?.source === 'suggestion') {
+      console.log("Dropped suggestion on Preview:", activeData);
+      // Crée un nouveau TextBlock à partir de la suggestion
+      addTextBlock(activeData.text);
+      return;
+    }
+
+    // Cas 3: Réorganiser les TextBlock existants dans la prévisualisation (si activé)
+    if (active.id !== over.id && activeData?.source === 'sortable-text-block') {
+      setTextBlocks((items) => {
+        const oldIndex = items.findIndex((item) => item.id === active.id);
+        const newIndex = items.findIndex((item) => item.id === over.id);
+        if (oldIndex === -1 || newIndex === -1) return items; // S'assurer que les deux éléments sont des TextBlock
+        // S'assurer que le drop se fait bien sur un autre TextBlock et non sur le fond de la preview
+        if (over.data.current?.source !== 'sortable-text-block') return items;
+        return arrayMove(items, oldIndex, newIndex);
+      });
+    }
+  };
+
+  const updateBlockContent = (id: string, content: string, buttonProps: Record<string, any> = {}) => {
+    setTextBlocks(blocks =>
+      blocks.map(block =>
+        block.id === id
+          ? { ...block, content, buttonProps: { ...block.buttonProps, ...buttonProps } }
+          : block
+      )
+    )
+  }
+
+  const addTextBlock = (content: string = "", buttonProps: Record<string, any> = {}) => {
+    const newBlock: TextBlock = {
+      id: `block-${Date.now()}`,
+      content,
+      type: buttonProps && Object.keys(buttonProps).length > 0 ? 'button' : 'text',
+      buttonProps: buttonProps && Object.keys(buttonProps).length > 0 ? buttonProps : undefined
+    }
+    setTextBlocks(blocks => [...blocks, newBlock])
+  }
+
+  const generateNewSuggestions = () => {
+    // TODO: Implement AI suggestion generation
+    console.log("Generating new suggestions...")
+  }
+
+  const filterSuggestionsByCategory = (category: string) => {
+    setSelectedSuggestionCategory(category)
+    if (category === "all") {
+      setSuggestions(ALL_SUGGESTIONS)
+    } else {
+      setSuggestions(ALL_SUGGESTIONS.filter(s => s.category === category))
+    }
   }
 
   // Effet pour initialiser les blocs de texte quand un template est sélectionné
   useEffect(() => {
     if (selectedTemplate) {
       const activeProspect = selectedProspect || manualProspect
-      const templateContent = selectedTemplate.content
-        .replace('{{prenom}}', activeProspect?.prenom || '[Prénom]')
-        .replace('{{date_proposition}}', activeProspect?.date_proposition || '[Date]')
-        .replace('{{poste}}', '[Poste]')
-        .replace('{{entreprise}}', '[Entreprise]')
+      let templateContent = selectedTemplate.content
+
+      // Remplacement dynamique des variables
+      const dataToReplace = { ...activeProspect };
+      Object.entries(dataToReplace).forEach(([key, value]) => {
+        if (value !== undefined && value !== null) {
+          const regex = new RegExp(`{{\s*${key}\s*}}`, 'g'); // Utilise {{variable}}
+          templateContent = templateContent.replace(regex, String(value));
+        }
+      });
+
+      // Nettoyer les variables non remplacées (optionnel)
+      templateContent = templateContent.replace(/{{\s*[^}]+\s*}}/g, '[Information manquante]');
 
       const templateParagraphs = templateContent.split('\n\n').filter(Boolean)
-      const blocks: TextBlock[] = templateParagraphs.map((paragraph, index) => ({
-        id: `template-${index}`,
+      const blocks: TextBlock[] = templateParagraphs.map((paragraph: string, index: number) => ({
+        id: `template-${Date.now()}-${index}`,
         content: paragraph,
-        type: 'template'
+        type: 'text'
       }))
 
       setTextBlocks(blocks)
@@ -626,32 +566,6 @@ export default function EmailGeneratorPage() {
       setTextBlocks([])
     }
   }, [selectedTemplate, selectedProspect, manualProspect])
-
-  // Gestion du drag and drop
-  const handleDragEnd = (event: any) => {
-    const { active, over } = event
-
-    if (active.id !== over.id) {
-      setTextBlocks((blocks) => {
-        const oldIndex = blocks.findIndex((block) => block.id === active.id)
-        const newIndex = blocks.findIndex((block) => block.id === over.id)
-        
-        return arrayMove(blocks, oldIndex, newIndex)
-      })
-    }
-  }
-
-  // Génération du contenu final pour l'envoi
-  const getFinalContent = () => {
-    return textBlocks.map(block => block.content).join('\n\n')
-  }
-
-  // Prévisualisation de l'email
-  const previewContent = selectedTemplate
-    ? selectedTemplate.content
-        .replace('{{prenom}}', (selectedProspect || manualProspect)?.prenom || '[Prénom]')
-        .replace('{{date_proposition}}', (selectedProspect || manualProspect)?.date_proposition || '[Date]')
-    : ''
 
   // Fonction pour programmer l'envoi
   const handleScheduleEmail = () => {
@@ -663,7 +577,7 @@ export default function EmailGeneratorPage() {
 
     const newScheduledEmail: ScheduledEmail = {
       id: Date.now().toString(),
-      content: previewContent,
+      content: textBlocks.map(block => block.content).join('\n\n'),
       recipient: selectedProspect.email,
       scheduledDate: scheduleDateTime,
       status: 'pending'
@@ -671,25 +585,6 @@ export default function EmailGeneratorPage() {
 
     setScheduledEmails([...scheduledEmails, newScheduledEmail])
     setShowScheduler(false)
-  }
-
-  // Fonction pour sauvegarder un template personnalisé
-  const handleSaveTemplate = () => {
-    if (!newTemplate.name || !newTemplate.content) return
-
-    const template: Template = {
-      id: Date.now(),
-      name: newTemplate.name,
-      category: newTemplate.category as Template['category'],
-      content: newTemplate.content,
-      isCustom: true,
-      createdAt: new Date(),
-      updatedAt: new Date()
-    }
-
-    setCustomTemplates([...customTemplates, template])
-    setShowNewTemplateModal(false)
-    setNewTemplate({ name: '', category: 'commercial', content: '' })
   }
 
   // Statistiques d'engagement
@@ -700,613 +595,130 @@ export default function EmailGeneratorPage() {
     replied: SAMPLE_EMAIL_HISTORY.filter(email => email.engagement?.replied).length
   }
 
-  // Fonction pour générer de nouvelles suggestions
-  const generateNewSuggestions = () => {
-    const filteredSuggestions = selectedSuggestionCategory === 'all'
-      ? ALL_SUGGESTIONS
-      : ALL_SUGGESTIONS.filter(s => s.category === selectedSuggestionCategory)
-    
-    const shuffled = [...filteredSuggestions].sort(() => Math.random() - 0.5)
-    setSuggestions(shuffled.slice(0, 8))
+  const handleSaveTemplate = () => {
+    // Implementation of handleSaveTemplate
   }
-
-  // Fonction pour filtrer les suggestions par catégorie
-  const filterSuggestionsByCategory = (category: string) => {
-    setSelectedSuggestionCategory(category)
-    const filteredSuggestions = category === 'all'
-      ? ALL_SUGGESTIONS
-      : ALL_SUGGESTIONS.filter(s => s.category === category)
-    setSuggestions(filteredSuggestions.slice(0, 8))
-  }
-
-  // Fonction pour ajouter un nouveau bloc personnalisé
-  const addCustomBlock = () => {
-    if (currentCustomText.trim()) {
-      const newBlock = {
-        id: `custom-${Date.now()}`,
-        content: currentCustomText,
-        type: 'custom' as const
-      }
-      setTextBlocks(prev => [...prev, newBlock])
-      setCurrentCustomText("")
-    }
-  }
-
-  // Fonction pour supprimer un bloc personnalisé
-  const removeCustomBlock = (blockId: string) => {
-    setCustomBlocks(prev => prev.filter(block => block.id !== blockId))
-  }
-
-  // Fonction pour gérer le redimensionnement
-  const handleResize = useCallback((e: MouseEvent, direction: string) => {
-    if (!resizingRef.current) return
-    
-    const deltaX = e.clientX - startPositionRef.current.x
-    const deltaY = e.clientY - startPositionRef.current.y
-    
-    const newPreviewPosition = { ...previewPosition }
-    const newDimensions = { 
-      width: initialDimensionsRef.current.width, 
-      height: initialDimensionsRef.current.height 
-    }
-    
-    // Redimensionnement horizontal
-    if (direction.includes('right')) {
-      newDimensions.width += deltaX
-    } else if (direction.includes('left')) {
-      newDimensions.width -= deltaX
-      newPreviewPosition.x = initialPositionRef.current.x + deltaX
-    }
-    
-    // Redimensionnement vertical
-    if (direction.includes('bottom')) {
-      newDimensions.height += deltaY
-    } else if (direction.includes('top')) {
-      newDimensions.height -= deltaY
-      newPreviewPosition.y = initialPositionRef.current.y + deltaY
-    }
-    
-    // Vérifier les dimensions minimales
-    const minWidth = 400
-    const minHeight = 500
-    
-    if (newDimensions.width < minWidth) {
-      newDimensions.width = minWidth
-      if (direction.includes('left')) {
-        newPreviewPosition.x = initialPositionRef.current.x + (initialDimensionsRef.current.width - minWidth)
-      }
-    }
-    
-    if (newDimensions.height < minHeight) {
-      newDimensions.height = minHeight
-      if (direction.includes('top')) {
-        newPreviewPosition.y = initialPositionRef.current.y + (initialDimensionsRef.current.height - minHeight)
-      }
-    }
-    
-    setPreviewDimensions({
-      width: `${newDimensions.width}px`,
-      height: `${newDimensions.height}px`
-    })
-    
-    setPreviewPosition(newPreviewPosition)
-  }, [previewPosition])
-  
-  // Fonction pour gérer le début du redimensionnement
-  const handleResizeStart = useCallback((e: React.MouseEvent<HTMLDivElement>, direction: string) => {
-    e.preventDefault()
-    resizingRef.current = true
-    startPositionRef.current = { x: e.clientX, y: e.clientY }
-    
-    // Sauvegarder les dimensions et positions initiales
-    if (previewRef.current) {
-      initialDimensionsRef.current = {
-        width: previewRef.current.offsetWidth,
-        height: previewRef.current.offsetHeight
-      }
-    }
-    initialPositionRef.current = { x: previewPosition.x, y: previewPosition.y }
-    
-    // Ajouter les gestionnaires d'événements pour le redimensionnement
-    document.addEventListener('mousemove', (e) => handleResize(e, direction), false)
-    document.addEventListener('mouseup', handleResizeEnd, false)
-  }, [previewPosition, handleResize])
-  
-  // Fonction pour gérer la fin du redimensionnement
-  const handleResizeEnd = useCallback(() => {
-    resizingRef.current = false
-    document.removeEventListener('mousemove', handleResize as any, false)
-    document.removeEventListener('mouseup', handleResizeEnd, false)
-  }, [handleResize])
-
-  // Fonction pour gérer le début du déplacement
-  const handleMoveStart = useCallback((e: React.MouseEvent<HTMLDivElement>) => {
-    e.preventDefault()
-    movingRef.current = true
-    startPositionRef.current = { x: e.clientX, y: e.clientY }
-    initialPositionRef.current = { x: previewPosition.x, y: previewPosition.y }
-    
-    // Ajouter les gestionnaires d'événements pour le déplacement
-    document.addEventListener('mousemove', handleMove, false)
-    document.addEventListener('mouseup', handleMoveEnd, false)
-  }, [previewPosition])
-  
-  // Fonction pour gérer le déplacement
-  const handleMove = useCallback((e: MouseEvent) => {
-    if (!movingRef.current) return
-    
-    const deltaX = e.clientX - startPositionRef.current.x
-    const deltaY = e.clientY - startPositionRef.current.y
-    
-    setPreviewPosition({
-      x: initialPositionRef.current.x + deltaX,
-      y: initialPositionRef.current.y + deltaY
-    })
-  }, [])
-  
-  // Fonction pour gérer la fin du déplacement
-  const handleMoveEnd = useCallback(() => {
-    movingRef.current = false
-    document.removeEventListener('mousemove', handleMove, false)
-    document.removeEventListener('mouseup', handleMoveEnd, false)
-  }, [handleMove])
 
   return (
-    <div className="h-[calc(100vh-4rem)] flex flex-col bg-neutral-100 dark:bg-neutral-900">
-      {/* Header */}
-      <div className="px-4 py-3 border-b bg-background backdrop-blur-sm">
-        <div className="flex items-center justify-between">
-          <div className="flex items-center gap-2">
-            <div className="h-8 w-8 rounded-lg bg-neutral-100 dark:bg-neutral-900 flex items-center justify-center">
-              <Mail className="h-4 w-4" />
+    <DndContext 
+      sensors={sensors} 
+      collisionDetection={closestCenter} 
+      onDragStart={handleDragStart}
+      onDragEnd={handleDragEnd}
+    >
+      <div className="h-[calc(100vh-4rem)] flex flex-col bg-neutral-100 dark:bg-neutral-900">
+        {/* Header */}
+        <div className="px-4 py-3 border-b bg-background backdrop-blur-sm shrink-0">
+          <div className="flex items-center justify-between">
+            <div className="flex items-center gap-2">
+              <div className="h-8 w-8 rounded-lg bg-neutral-100 dark:bg-neutral-900 flex items-center justify-center">
+                <Mail className="h-4 w-4" />
+              </div>
+              <h1 className="text-xl font-semibold">
+                Générer un email
+              </h1>
             </div>
-            <h1 className="text-xl font-semibold">
-              Générer un email
-            </h1>
+            <div className="flex items-center gap-2">
+              <Button variant="outline" size="sm" onClick={() => setShowHistory(true)} className="hover:bg-primary/5">
+                <History className="h-4 w-4 mr-1 text-primary/70" />
+                Historique
+              </Button>
+              <Button variant="outline" size="sm" onClick={() => setShowStats(true)} className="hover:bg-primary/5">
+                <BarChart className="h-4 w-4 mr-1 text-primary/70" />
+                Statistiques
+              </Button>
+            </div>
           </div>
-          <div className="flex items-center gap-2">
-            <Button variant="outline" size="sm" onClick={() => setShowHistory(true)} className="hover:bg-primary/5">
-              <History className="h-4 w-4 mr-1 text-primary/70" />
-              Historique
-            </Button>
-            <Button variant="outline" size="sm" onClick={() => setShowStats(true)} className="hover:bg-primary/5">
-              <BarChart className="h-4 w-4 mr-1 text-primary/70" />
-              Statistiques
-            </Button>
-          </div>
+        </div>
+
+        {/* Main Content - Changé en flex pour 2 colonnes: Outils + Preview */}
+        <div className="flex-1 flex overflow-hidden">
+          {/* Colonne Gauche - Outils */}
+          <aside className="w-[360px] border-r bg-background flex flex-col shrink-0 h-full overflow-y-auto">
+            <ToolsAccordion />
+          </aside>
+
+          {/* Colonne Droite - Maintenant éditeur WYSIWYG / Aperçu */}
+          <main className="flex-1 flex flex-col bg-neutral-100 dark:bg-neutral-800 overflow-auto relative p-4">
+            {/* EmailPreview occupe maintenant la zone principale */}
+            {/* Nous allons devoir passer mjmlBlocks ici pour le rendu */}
+            <EmailPreview
+              ref={previewRef}
+              dimensions={previewDimensions}
+              position={previewPosition}
+              isFullscreen={isPreviewFullscreen}
+              isMoving={movingRef.current}
+              recipient={(selectedProspect || manualProspect)?.email || '[Email]'}
+              subject={emailSubject || selectedTemplate?.name || '[Objet]'}
+              onFullscreenToggle={() => setIsPreviewFullscreen(!isPreviewFullscreen)}
+              onSchedule={() => setShowScheduler(true)}
+              setPreviewDimensions={setPreviewDimensions}
+              setPreviewPosition={setPreviewPosition}
+              startPositionRef={startPositionRef}
+              initialDimensionsRef={initialDimensionsRef}
+              initialPositionRef={initialPositionRef}
+              resizingRef={resizingRef}
+              movingRef={movingRef}
+              // Il faudra passer les mjmlBlocks pour les afficher
+              // mjmlBlocks={mjmlBlocks} 
+            >
+              {/* Le contenu sera maintenant le rendu des mjmlBlocks */}
+              <div className="p-4 min-h-[300px] text-center text-neutral-400 flex items-center justify-center bg-white border rounded">
+                 (Rendu MJML/HTML des blocs à implémenter ici)
+              </div>
+            </EmailPreview>
+          </main>
+
         </div>
       </div>
 
-      {/* Main Content */}
-      <div className="flex-1 grid grid-cols-12 gap-4 overflow-hidden">
-        {/* Left Column - Tools Accordion */}
-        <div className="col-span-3 h-full">
-          <ToolsAccordion />
-        </div>
-
-        {/* Right Column - Preview */}
-        <div className="col-span-9 h-full flex items-center justify-center overflow-auto relative">
-          {/* Arrière-plan avec motif de points */}
-          <div 
-            className="absolute inset-0 z-0"
-            style={{ 
-              backgroundImage: 'radial-gradient(circle, #d1d5db 1px, transparent 1px)',
-              backgroundSize: '20px 20px',
-              backgroundPosition: '0 0',
-              opacity: 0.5
-            }}
-          />
-          <div 
-            ref={previewRef}
-            className="absolute"
-            style={{ 
-              width: previewDimensions.width, 
-              height: previewDimensions.height,
-              maxWidth: '100%', 
-              maxHeight: '100%',
-              minWidth: '400px',
-              minHeight: '500px',
-              transform: `translate(${previewPosition.x}px, ${previewPosition.y}px)`,
-              zIndex: movingRef.current ? 20 : 10,
-              boxShadow: movingRef.current ? '0 8px 30px rgba(0,0,0,0.12)' : '0 2px 10px rgba(0,0,0,0.05)'
-            }}
-          >
-            <Card className="h-full flex flex-col overflow-hidden border-blue-100">
-              <CardHeader 
-                className="border-b bg-blue-50/50 py-3 px-4 cursor-move"
-                onMouseDown={handleMoveStart}
-              >
-                <div className="flex items-center justify-between">
-                  <div className="flex items-center gap-2">
-                    <CardTitle className="text-sm font-medium text-neutral-800">Prévisualisation</CardTitle>
-                  </div>
-                  <div className="flex items-center gap-1">
-                    <TooltipProvider>
-                      <Tooltip>
-                        <TooltipTrigger asChild>
-                          <Button
-                            variant="ghost"
-                            size="sm"
-                            className="h-8 w-8 p-0 hover:bg-blue-100 hover:text-blue-600"
-                          >
-                            <Wand2 className="h-4 w-4" />
-                          </Button>
-                        </TooltipTrigger>
-                        <TooltipContent>
-                          <p>Améliorer avec l'IA</p>
-                        </TooltipContent>
-                      </Tooltip>
-                    
-                      <Tooltip>
-                        <TooltipTrigger asChild>
-                          <Button
-                            variant="ghost"
-                            size="sm"
-                            onClick={() => setShowScheduler(true)}
-                            className="h-8 w-8 p-0 hover:bg-blue-100 hover:text-blue-600"
-                          >
-                            <Clock className="h-4 w-4" />
-                          </Button>
-                        </TooltipTrigger>
-                        <TooltipContent>
-                          <p>Programmer l'envoi</p>
-                        </TooltipContent>
-                      </Tooltip>
-                    
-                      <Tooltip>
-                        <TooltipTrigger asChild>
-                          <Button
-                            variant="ghost"
-                            size="sm"
-                            onClick={() => setIsPreviewFullscreen(!isPreviewFullscreen)}
-                            className="h-8 w-8 p-0 hover:bg-blue-100 hover:text-blue-600"
-                          >
-                            {isPreviewFullscreen ? <Minimize2 className="h-4 w-4" /> : <Maximize2 className="h-4 w-4" />}
-                          </Button>
-                        </TooltipTrigger>
-                        <TooltipContent>
-                          <p>{isPreviewFullscreen ? "Réduire" : "Agrandir"} la prévisualisation</p>
-                        </TooltipContent>
-                      </Tooltip>
-                    </TooltipProvider>
-                  </div>
-                </div>
-              </CardHeader>
-              
-              <CardContent className="flex-1 p-4 overflow-y-auto">
-                <div className="border rounded-lg shadow-sm mb-4">
-                  <div className="p-3 bg-blue-50/50 border-b rounded-t-lg">
-                    <div className="space-y-1">
-                      <div className="text-sm font-medium text-neutral-800">À: {(selectedProspect || manualProspect)?.email || '[Email]'}</div>
-                      <div className="text-xs text-neutral-500">Objet: {emailSubject || selectedTemplate?.name || '[Objet]'}</div>
-                    </div>
-                  </div>
-                  
-                  <div className="p-4">
-                    <DndContext sensors={sensors} collisionDetection={closestCenter} onDragEnd={handleDragEnd}>
-                      <SortableContext items={textBlocks.map(block => block.id)} strategy={verticalListSortingStrategy}>
-                        <div 
-                          className="space-y-3 min-h-[250px] relative border-2 border-dashed border-transparent hover:border-blue-200 transition-colors rounded-md p-2"
-                          onDragOver={(e) => {
-                            e.preventDefault();
-                            e.currentTarget.classList.add('border-blue-300', 'bg-blue-50/30');
-                          }}
-                          onDragLeave={(e) => {
-                            e.currentTarget.classList.remove('border-blue-300', 'bg-blue-50/30');
-                          }}
-                          onDrop={(e) => {
-                            e.preventDefault();
-                            e.currentTarget.classList.remove('border-blue-300', 'bg-blue-50/30');
-                            const text = e.dataTransfer.getData("text/plain");
-                            if (text) {
-                              const newBlock = {
-                                id: `custom-${Date.now()}`,
-                                content: text,
-                                type: 'custom' as const
-                              };
-                              setTextBlocks(prev => [...prev, newBlock]);
-                            }
-                          }}
-                        >
-                          {textBlocks.length === 0 && (
-                            <div className="absolute inset-0 flex items-center justify-center">
-                              <div className="text-center text-neutral-400">
-                                <Mail className="h-10 w-10 mx-auto mb-2 opacity-20" />
-                                <p className="text-xs">Glissez du contenu ici ou sélectionnez un template</p>
-                              </div>
-                            </div>
-                          )}
-                          {textBlocks.map((block) => (
-                            <SortableTextBlock
-                              key={block.id}
-                              block={block}
-                              onRemove={removeBlock}
-                              onUpdate={(id, content) => {
-                                setTextBlocks(prev =>
-                                  prev.map(b =>
-                                    b.id === id ? { ...b, content } : b
-                                  )
-                                )
-                              }}
-                            />
-                          ))}
-                        </div>
-                      </SortableContext>
-                    </DndContext>
-                  </div>
-                </div>
-
-                <Button className="w-full bg-blue-600 hover:bg-blue-700 h-9 text-sm">
-                  <Send className="h-4 w-4 mr-1.5" />
-                  Envoyer l'email
-                </Button>
-              </CardContent>
-            </Card>
+      {/* DragOverlay */}
+      <DragOverlay>
+        {activeId ? (
+          (() => {
+            // Aperçu pour les TextBlocks (Ancien éditeur) - Peut être supprimé si plus utilisé
+            // const activeTextBlock = textBlocks.find((b) => b.id === activeId);
+            // if (activeTextBlock) {
+            //   return <SortableTextBlock block={activeTextBlock} isDragging />;
+            // }
             
-            {/* Poignées de redimensionnement */}
-            {/* Coin inférieur droit */}
-            <div 
-              className="absolute bottom-0 right-0 w-4 h-4 cursor-se-resize z-10 hover:opacity-80"
-              onMouseDown={(e) => handleResizeStart(e, 'right-bottom')}
-              style={{
-                background: 'transparent',
-                border: '2px solid #3b82f6',
-                borderLeft: 'none',
-                borderTop: 'none',
-                opacity: 0.4,
-                borderBottomRightRadius: '3px'
-              }}
-            />
-            
-            {/* Coin supérieur droit */}
-            <div 
-              className="absolute top-0 right-0 w-4 h-4 cursor-ne-resize z-10 hover:opacity-80"
-              onMouseDown={(e) => handleResizeStart(e, 'right-top')}
-              style={{
-                background: 'transparent',
-                border: '2px solid #3b82f6',
-                borderLeft: 'none',
-                borderBottom: 'none',
-                opacity: 0.4,
-                borderTopRightRadius: '3px'
-              }}
-            />
-            
-            {/* Coin inférieur gauche */}
-            <div 
-              className="absolute bottom-0 left-0 w-4 h-4 cursor-sw-resize z-10 hover:opacity-80"
-              onMouseDown={(e) => handleResizeStart(e, 'left-bottom')}
-              style={{
-                background: 'transparent',
-                border: '2px solid #3b82f6',
-                borderRight: 'none',
-                borderTop: 'none',
-                opacity: 0.4,
-                borderBottomLeftRadius: '3px'
-              }}
-            />
-            
-            {/* Coin supérieur gauche */}
-            <div 
-              className="absolute top-0 left-0 w-4 h-4 cursor-nw-resize z-10 hover:opacity-80"
-              onMouseDown={(e) => handleResizeStart(e, 'left-top')}
-              style={{
-                background: 'transparent',
-                border: '2px solid #3b82f6',
-                borderRight: 'none',
-                borderBottom: 'none',
-                opacity: 0.4,
-                borderTopLeftRadius: '3px'
-              }}
-            />
-            
-            {/* Bord droit */}
-            <div 
-              className="absolute right-0 top-1/2 -translate-y-1/2 w-1.5 h-16 cursor-e-resize z-10 hover:opacity-80"
-              onMouseDown={(e) => handleResizeStart(e, 'right')}
-              style={{
-                background: '#3b82f6',
-                opacity: 0.2,
-                borderRadius: '1px'
-              }}
-            />
-            
-            {/* Bord gauche */}
-            <div 
-              className="absolute left-0 top-1/2 -translate-y-1/2 w-1.5 h-16 cursor-w-resize z-10 hover:opacity-80"
-              onMouseDown={(e) => handleResizeStart(e, 'left')}
-              style={{
-                background: '#3b82f6',
-                opacity: 0.2,
-                borderRadius: '1px'
-              }}
-            />
-            
-            {/* Bord inférieur */}
-            <div 
-              className="absolute bottom-0 left-1/2 -translate-x-1/2 h-1.5 w-16 cursor-s-resize z-10 hover:opacity-80"
-              onMouseDown={(e) => handleResizeStart(e, 'bottom')}
-              style={{
-                background: '#3b82f6',
-                opacity: 0.2,
-                borderRadius: '1px'
-              }}
-            />
-            
-            {/* Bord supérieur */}
-            <div 
-              className="absolute top-0 left-1/2 -translate-x-1/2 h-1.5 w-16 cursor-n-resize z-10 hover:opacity-80"
-              onMouseDown={(e) => handleResizeStart(e, 'top')}
-              style={{
-                background: '#3b82f6',
-                opacity: 0.2,
-                borderRadius: '1px'
-              }}
-            />
-          </div>
-
-          {/* Indicateur de position et dimensions */}
-          <div className="absolute bottom-3 right-3 bg-white dark:bg-neutral-800 px-2 py-1 rounded text-xs opacity-70 z-30">
-            {Math.round(parseFloat(previewDimensions.width.toString()))}px × 
-            {Math.round(parseFloat(previewDimensions.height.toString()))}px
-          </div>
-        </div>
-      </div>
+            // Aperçu pour les Outils MJML
+            if (typeof activeId === 'string' && activeId.startsWith('mj-')) {
+               return <div className="p-2 bg-blue-100 border border-blue-300 rounded shadow-lg opacity-80 font-medium">{activeId.replace('mj-', '').replace('-1col','').replace('-2col','').replace('-3col','')}</div>;
+            }
+            return null;
+          })()
+        ) : null}
+      </DragOverlay>
 
       {/* Modals */}
-      <Dialog open={showNewTemplateModal} onOpenChange={setShowNewTemplateModal}>
-        <DialogContent>
-          <DialogHeader>
-            <div className="flex items-center space-x-2">
-              <FileText className="h-5 w-5" />
-              <DialogTitle>Nouveau template</DialogTitle>
-            </div>
-          </DialogHeader>
-          <div className="space-y-4">
-            <div>
-              <Label>Nom du template</Label>
-              <Input
-                value={newTemplate.name}
-                onChange={(e) => setNewTemplate({ ...newTemplate, name: e.target.value })}
-                placeholder="Ex: Template de relance"
-              />
-            </div>
-            <div>
-              <Label>Catégorie</Label>
-              <Select
-                value={newTemplate.category}
-                onValueChange={(value) => setNewTemplate({ ...newTemplate, category: value as Template['category'] })}
-              >
-                <SelectTrigger>
-                  <SelectValue />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="commercial">Commercial</SelectItem>
-                  <SelectItem value="event">Événement</SelectItem>
-                  <SelectItem value="followup">Suivi</SelectItem>
-                  <SelectItem value="relance">Relance</SelectItem>
-                  <SelectItem value="remerciement">Remerciement</SelectItem>
-                  <SelectItem value="invitation">Invitation</SelectItem>
-                  <SelectItem value="presentation">Présentation</SelectItem>
-                  <SelectItem value="devis">Devis</SelectItem>
-                  <SelectItem value="newsletter">Newsletter</SelectItem>
-                  <SelectItem value="other">Autre</SelectItem>
-                </SelectContent>
-              </Select>
-            </div>
-            <div>
-              <Label>Contenu</Label>
-              <Textarea
-                value={newTemplate.content}
-                onChange={(e) => setNewTemplate({ ...newTemplate, content: e.target.value })}
-                placeholder="Contenu du template..."
-                className="h-[200px]"
-              />
-            </div>
-            <DialogFooter>
-              <Button variant="outline" onClick={() => setShowNewTemplateModal(false)}>
-                Annuler
-              </Button>
-              <Button onClick={handleSaveTemplate}>
-                <Save className="h-4 w-4 mr-1" />
-                Sauvegarder
-              </Button>
-            </DialogFooter>
-          </div>
-        </DialogContent>
-      </Dialog>
-
-      <Dialog open={showHistory} onOpenChange={setShowHistory}>
-        <DialogContent className="max-w-3xl">
-          <DialogHeader>
-            <div className="flex items-center space-x-2">
-              <History className="h-5 w-5" />
-              <DialogTitle>Historique des emails</DialogTitle>
-            </div>
-          </DialogHeader>
-          <ScrollArea className="h-[400px]">
-            <div className="space-y-4">
-              {SAMPLE_EMAIL_HISTORY.map((email) => (
-                <div key={email.id} className="p-4 border rounded-lg">
-                  <div className="flex justify-between items-start">
-    <div>
-                      <div className="font-medium">{email.recipient}</div>
-                      <div className="text-sm text-muted-foreground">{email.subject}</div>
-                    </div>
-                    <div className="text-sm text-muted-foreground">
-                      {email.sentAt.toLocaleDateString()}
-                    </div>
-                  </div>
-                  {email.engagement && (
-                    <div className="mt-2 flex gap-2">
-                      <Badge variant={email.engagement.opened ? "default" : "secondary"}>
-                        {email.engagement.opened ? "Ouvert" : "Non ouvert"}
-                      </Badge>
-                      <Badge variant={email.engagement.clicked ? "default" : "secondary"}>
-                        {email.engagement.clicked ? "Cliqué" : "Non cliqué"}
-                      </Badge>
-                      <Badge variant={email.engagement.replied ? "default" : "secondary"}>
-                        {email.engagement.replied ? "Répondu" : "Non répondu"}
-                      </Badge>
-                    </div>
-                  )}
-                </div>
-              ))}
-            </div>
-          </ScrollArea>
-        </DialogContent>
-      </Dialog>
-
-      <Dialog open={showStats} onOpenChange={setShowStats}>
-        <DialogContent>
-          <DialogHeader>
-            <div className="flex items-center space-x-2">
-              <BarChart className="h-5 w-5" />
-              <DialogTitle>Statistiques d'engagement</DialogTitle>
-            </div>
-          </DialogHeader>
-          <div className="grid grid-cols-2 gap-4">
-            <Card>
-              <CardHeader>
-                <CardTitle className="text-sm">Emails envoyés</CardTitle>
-              </CardHeader>
-              <CardContent>
-                <div className="text-2xl font-bold">{engagementStats.totalSent}</div>
-              </CardContent>
-            </Card>
-            <Card>
-              <CardHeader>
-                <CardTitle className="text-sm">Taux d'ouverture</CardTitle>
-              </CardHeader>
-              <CardContent>
-                <div className="text-2xl font-bold">
-                  {Math.round((engagementStats.opened / engagementStats.totalSent) * 100)}%
-                </div>
-              </CardContent>
-            </Card>
-            <Card>
-              <CardHeader>
-                <CardTitle className="text-sm">Taux de clic</CardTitle>
-              </CardHeader>
-              <CardContent>
-                <div className="text-2xl font-bold">
-                  {Math.round((engagementStats.clicked / engagementStats.totalSent) * 100)}%
-                </div>
-              </CardContent>
-            </Card>
-            <Card>
-              <CardHeader>
-                <CardTitle className="text-sm">Taux de réponse</CardTitle>
-              </CardHeader>
-              <CardContent>
-                <div className="text-2xl font-bold">
-                  {Math.round((engagementStats.replied / engagementStats.totalSent) * 100)}%
-                </div>
-              </CardContent>
-            </Card>
-          </div>
-        </DialogContent>
-      </Dialog>
-    </div>
+      <NewTemplateDialog 
+        open={showNewTemplateModal}
+        onOpenChange={setShowNewTemplateModal}
+        template={newTemplate}
+        onTemplateChange={setNewTemplate}
+        onSave={handleSaveTemplate}
+      />
+      <HistoryDialog 
+        open={showHistory}
+        onOpenChange={setShowHistory}
+        emailHistory={SAMPLE_EMAIL_HISTORY}
+      />
+      <StatsDialog
+        open={showStats}
+        onOpenChange={setShowStats}
+        stats={engagementStats}
+      />
+      {/* Le bouton flottant pour ajouter un bloc texte était mal placé */}
+      {/* <Button 
+        variant="outline" 
+        size="sm" 
+        onClick={() => addTextBlock("Cliquez ici", { backgroundColor: "#1A73E8", textColor: "#FFFFFF" })}
+        className="flex items-center gap-1"
+      >
+        <Box className="h-4 w-4" />
+        <span>Bouton</span>
+      </Button> */}
+    </DndContext>
   )
 }

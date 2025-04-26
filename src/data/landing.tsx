@@ -20,7 +20,7 @@ export const landingConfig = {
     ],
     hero: {
         title: "La prospection éthique et efficace",
-        subtitle: "Développez votre réseau professionnel de manière responsable et durable"
+        subtitle: "Développez votre réseau professionnel de manière responsable"
     },
     cta: {
         title: "Prêt à développer votre réseau de manière éthique ?",
