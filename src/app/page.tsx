@@ -13,7 +13,7 @@ export default async function LandingPage() {
         aria-labelledby="hero-heading"
       >
         {/* Effet de spot principal */}
-        <div className="absolute inset-0 -z-10">
+        <div className="absolute inset-0 -z-10 ">
           <div 
             className="absolute top-0 left-1/2 w-[1200px] h-[800px] bg-gradient-radial from-primary/90 via-primary/20 to-transparent "
             style={{
