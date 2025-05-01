@@ -1,26 +1,11 @@
 "use client"
 
-import { useState, useEffect, useRef, useCallback } from "react"
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
+import { useState, useEffect, useRef} from "react"
 import { Button } from "@/components/ui/button"
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
-import { Separator } from "@/components/ui/separator"
-import { Label } from "@/components/ui/label"
-import { Send, Clock, Plus, Linkedin, Sparkles, Calendar, MessageSquare, History, BarChart, Save, Settings, UserPlus, FileText, Mail, PenLine, GripVertical, X, Maximize2, Minimize2, Wand2, CheckCircle, Box } from "lucide-react"
-import { Input } from "@/components/ui/input"
-import { Textarea } from "@/components/ui/textarea"
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
-import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger, DialogFooter } from "@/components/ui/dialog"
-import { Badge } from "@/components/ui/badge"
-import { ScrollArea } from "@/components/ui/scroll-area"
-import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip"
 import { DndContext, closestCenter, KeyboardSensor, PointerSensor, useSensor, useSensors, DragOverlay, DragStartEvent, DragEndEvent, UniqueIdentifier } from '@dnd-kit/core'
-import { arrayMove, SortableContext, sortableKeyboardCoordinates, useSortable, verticalListSortingStrategy } from '@dnd-kit/sortable'
-import { CSS } from '@dnd-kit/utilities'
-import { cn } from "@/lib/utils"
-import { EmptyState } from "@/components/ui/empty-state"
+import { arrayMove, sortableKeyboardCoordinates } from '@dnd-kit/sortable'
+import { Mail, History, BarChart } from "lucide-react"
 import { ToolsAccordion } from "./components/tools-accordion"
-import { SortableTextBlock } from "./components/SortableTextBlock"
 import { EmailPreview } from "./components/EmailPreview"
 import { NewTemplateDialog } from "./components/NewTemplateDialog"
 import { HistoryDialog } from "./components/HistoryDialog"
@@ -28,13 +13,11 @@ import { StatsDialog } from "./components/StatsDialog"
 import { 
   Prospect, 
   Template, 
-  LinkedInData, 
   Suggestion, 
   ScheduledEmail, 
   EmailHistory, 
   TextBlock 
 } from "./types"
-import { EmailCanvas } from "./components/email-canvas"
 
 // Interface pour les blocs MJML (peut être déplacée dans types/index.ts plus tard)
 interface MjmlBlock {
