@@ -12,11 +12,11 @@ export function DashboardLayout({
     return (
         <SidebarProvider>
             <div className="group peer hidden md:block text-sidebar-foreground">
-                <AppSidebar className="hidden border-r border-border/40 bg-sidebar md:flex" count={count} />
+                <AppSidebar className="hidden border-r border-border/40 bg-sidebar md:flex" />
             </div>
             <main className="relative flex min-h-screen w-full flex-col peer-data-[variant=inset]:min-h-[calc(100svh-theme(spacing.4))]">
                 <Header />
-                <div className="flex-1">
+                <div className="flex-1 h-[calc(100vh-56px)]">
                     {children}
                 </div>
             </main>

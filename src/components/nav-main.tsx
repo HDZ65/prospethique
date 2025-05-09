@@ -41,7 +41,7 @@ export function NavMain({
                   <Link 
                     href={item.url}
                     className={`
-                      group relative flex items-center gap-3 rounded-lg px-3 py-2.5 transition-all duration-200 sidebar-item-hover
+                      group relative flex items-center gap-3 rounded-lg px-3 py-5 transition-all duration-200 sidebar-item-hover
                       ${isActive 
                         ? 'bg-[hsl(var(--sidebar-active))] text-[hsl(var(--sidebar-active-text))] font-medium' 
                         : 'text-[hsl(var(--sidebar-muted))] hover:bg-[hsl(var(--sidebar-accent))] hover:text-[hsl(var(--sidebar-fg))]'
